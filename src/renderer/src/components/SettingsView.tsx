@@ -1,27 +1,40 @@
 import React, { useRef, useState } from 'react'
 import { translations } from '@shared/i18n'
-import { Language, TaskDefinition, ThemeMode, UpdateChannel } from '@shared/types'
+import {
+  Language,
+  MiniReminderPosition,
+  TaskDefinition,
+  ThemeMode,
+  UpdateChannel
+} from '@shared/types'
 import { useApp } from '../context/AppContext'
+import { CustomTaskModal } from './CustomTaskModal'
 import {
   AlertTriangle,
   Bell,
   Check,
   Clock,
+  Compass,
   Download,
+  EyeOff,
   FileDown,
   FileUp,
   Globe,
+  HelpCircle,
   Info,
   Laptop,
   Moon,
+  Plus,
   Power,
   RefreshCw,
   RotateCcw,
   Shield,
   Sliders,
   Sun,
+  Trash2,
   Volume2,
-  VolumeX
+  VolumeX,
+  Zap
 } from 'lucide-react'
 
 export const SettingsView: React.FC = () => {
@@ -31,6 +44,7 @@ export const SettingsView: React.FC = () => {
     updateStatus,
     updateSettings,
     updateTask,
+    deleteTask,
     resetTasks,
     exportData,
     validateImport,
@@ -38,10 +52,14 @@ export const SettingsView: React.FC = () => {
     checkForUpdates,
     downloadUpdate,
     installUpdate,
+    testNotification,
+    testMiniReminder,
     showToast
   } = useApp()
 
-  const [activeSection, setActiveSection] = useState<'general' | 'tasks' | 'updates' | 'data'>('general')
+  const [activeSection, setActiveSection] = useState<'general' | 'tasks' | 'diagnostics' | 'updates' | 'data'>('general')
+  const [editingTask, setEditingTask] = useState<TaskDefinition | null>(null)
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false)
   const [importJsonInput, setImportJsonInput] = useState('')
   const [importPreview, setImportPreview] = useState<{
     valid: boolean
@@ -61,7 +79,6 @@ export const SettingsView: React.FC = () => {
   const handleExport = async () => {
     try {
       const json = await exportData()
-      // Create blob download
       const blob = new Blob([json], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -114,12 +131,13 @@ export const SettingsView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
+    <div className="space-y-6 animate-fade-in pb-12 font-sans">
       {/* Settings Navigation tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         {[
           { id: 'general' as const, label: t.settings.general, icon: Sliders },
           { id: 'tasks' as const, label: t.settings.tasks, icon: Clock },
+          { id: 'diagnostics' as const, label: 'الفحص والتنبيهات', icon: Bell },
           { id: 'updates' as const, label: t.settings.updates, icon: RefreshCw },
           { id: 'data' as const, label: t.settings.dataManagement, icon: Shield }
         ].map(({ id, label, icon: Icon }) => (
@@ -201,6 +219,59 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
 
+          {/* Mini Reminder Window Settings */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Compass className="w-4 h-4 text-emerald-500" />
+              <span>نافذة التذكير المصغّرة</span>
+            </h3>
+
+            <div className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+              <div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  {t.miniReminder.enableLabel}
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {t.miniReminder.enableDesc}
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={storeData.settings.miniReminderEnabled}
+                onChange={(e) => updateSettings({ miniReminderEnabled: e.target.checked })}
+                className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+              />
+            </div>
+
+            {storeData.settings.miniReminderEnabled && (
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  {t.miniReminder.positionLabel}
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { pos: 'bottom-right' as MiniReminderPosition, label: t.miniReminder.positions.bottomRight },
+                    { pos: 'bottom-left' as MiniReminderPosition, label: t.miniReminder.positions.bottomLeft },
+                    { pos: 'top-right' as MiniReminderPosition, label: t.miniReminder.positions.topRight },
+                    { pos: 'top-left' as MiniReminderPosition, label: t.miniReminder.positions.topLeft }
+                  ].map(({ pos, label }) => (
+                    <button
+                      key={pos}
+                      onClick={() => updateSettings({ miniReminderPosition: pos })}
+                      className={`p-2 rounded-xl text-xs font-medium border transition-all ${
+                        storeData.settings.miniReminderPosition === pos
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* System & Startup Card */}
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -268,6 +339,24 @@ export const SettingsView: React.FC = () => {
                 className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
               />
             </div>
+
+            {/* Hide Weekly History */}
+            <div className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+              <div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  إخفاء سجل الإنجاز الأسبوعي
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {t.history.hideHistoryOption}
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={storeData.settings.hideWeeklyHistory}
+                onChange={(e) => updateSettings({ hideWeeklyHistory: e.target.checked })}
+                className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -277,15 +366,24 @@ export const SettingsView: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500">
-              يمكنك تخصيص فترات التذكير وفواصل الإشعارات لكل مهمة على حدة:
+              يمكنك تخصيص فترات التذكير وإضافة مهام مخصصة جديدة:
             </p>
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-600 font-medium transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>{t.actions.reset}</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowCreateTaskModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>إضافة مهمة جديدة</span>
+              </button>
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-rose-600 font-medium transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t.actions.reset}</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -299,19 +397,32 @@ export const SettingsView: React.FC = () => {
                     <span className="text-sm font-bold text-slate-900 dark:text-white">
                       {task.name[lang] || task.name.ar}
                     </span>
+                    {!task.isDefault && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-medium">
+                        مهمة مخصصة
+                      </span>
+                    )}
                   </div>
 
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={task.enabled}
-                      onChange={(e) => updateTask(task.id, { enabled: e.target.checked })}
-                      className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
-                    />
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                      {t.settings.taskEnabledLabel}
-                    </span>
-                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setEditingTask(task)}
+                      className="text-xs text-emerald-600 hover:underline font-medium"
+                    >
+                      تعديل كامل
+                    </button>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={task.enabled}
+                        onChange={(e) => updateTask(task.id, { enabled: e.target.checked })}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                      />
+                      <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        {t.settings.taskEnabledLabel}
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -361,58 +472,90 @@ export const SettingsView: React.FC = () => {
 
                   <div>
                     <label className="text-[11px] text-slate-500 block mb-1">
-                      {t.settings.snoozeDurationLabel}
+                      مدة جلسة التفرّغ الافتراضية
                     </label>
                     <select
-                      value={task.snoozeDurationMinutes}
+                      value={task.defaultFocusDurationMinutes || 15}
                       onChange={(e) =>
-                        updateTask(task.id, { snoozeDurationMinutes: Number(e.target.value) })
+                        updateTask(task.id, { defaultFocusDurationMinutes: Number(e.target.value) })
                       }
                       className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
                     >
+                      <option value={5}>5 دقائق</option>
                       <option value={10}>10 دقائق</option>
                       <option value={15}>15 دقيقة</option>
                       <option value={20}>20 دقيقة</option>
                       <option value={30}>30 دقيقة</option>
-                      <option value={60}>60 دقيقة</option>
+                      <option value={45}>45 دقيقة</option>
+                      <option value={60}>ساعة كاملة</option>
                     </select>
-                  </div>
-                </div>
-
-                {/* Days of week selector */}
-                <div className="pt-2">
-                  <span className="text-[11px] text-slate-500 block mb-1.5">
-                    {t.settings.daysScheduledLabel}
-                  </span>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {t.days.map((dayName: string, idx: number) => {
-                      const isSelected = task.daysOfWeek.includes(idx)
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            const newDays = isSelected
-                              ? task.daysOfWeek.filter((d: number) => d !== idx)
-                              : [...task.daysOfWeek, idx].sort()
-                            // Keep at least one day
-                            if (newDays.length > 0) {
-                              updateTask(task.id, { daysOfWeek: newDays })
-                            }
-                          }}
-                          className={`px-3 py-1 rounded-xl text-xs font-medium border transition-all ${
-                            isSelected
-                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold'
-                              : 'border-slate-200 dark:border-slate-800 text-slate-400 bg-slate-50 dark:bg-slate-800/40'
-                          }`}
-                        >
-                          {dayName}
-                        </button>
-                      )
-                    })}
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION: DIAGNOSTICS & NOTIFICATIONS */}
+      {activeSection === 'diagnostics' && (
+        <div className="space-y-4">
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Bell className="w-4 h-4 text-emerald-500" />
+                <span>فحص واختبار التنبيهات</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                تأكد من قدرة التطبيق على إرسال الإشعارات وعرض النوافذ المصغّرة بنجاح على نظام Windows.
+              </p>
+            </div>
+
+            {/* Test buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  إشعار Windows Toast
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  إرسال إشعار فوري إلى مركز إشعارات Windows لاختبار الصوت والظهور.
+                </p>
+                <button
+                  onClick={() => testNotification()}
+                  className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium transition-colors flex items-center gap-2"
+                >
+                  <Bell className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{t.actions.testNotification}</span>
+                </button>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  نافذة التذكير المصغّرة
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  عرض نافذة عائمة مصغّرة غير سارقة للتركيز في الموضع المحدد.
+                </p>
+                <button
+                  onClick={() => testMiniReminder()}
+                  className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium transition-colors flex items-center gap-2"
+                >
+                  <Compass className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{t.actions.testMiniReminder}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Educational Note about Windows Focus Assist / DND */}
+            <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>ملاحظة حول ميزة تركيز Windows (Focus Assist / Do Not Disturb)</span>
+              </div>
+              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                في حال تفعيل وضع عدم الإزعاج أو وضع الألعاب أو تشغيل العروض التقديمية في Windows، قد يكتم النظام الإشعارات تلقائيًا أو يجمعها في مركز الإجراءات دون إصدار صوت أو نافذة منبثقة. يمكنك التحقق من إعدادات Focus Assist في إعدادات النظام للتأكد من السماح بوصول تنبيهات «وِرد».
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -428,7 +571,7 @@ export const SettingsView: React.FC = () => {
                   <span>تحديثات GitHub Releases</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  تحديثات تلقائية آمنة مباشرة من المستودع الرسمي المفتوح المصدر
+                  تحديثات دورية مباشرة من المستودع الرسمي المفتوح المصدر
                 </p>
               </div>
 
@@ -506,12 +649,6 @@ export const SettingsView: React.FC = () => {
               </div>
             )}
 
-            {updateStatus.state === 'error' && (
-              <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs">
-                {t.settings.updateError} ({updateStatus.message})
-              </div>
-            )}
-
             {/* Controls */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
@@ -575,7 +712,7 @@ export const SettingsView: React.FC = () => {
                 <span>{t.settings.dataManagement}</span>
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                جميع بياناتك تُحفظ محليًا على حاسوبك بصيغة ذرية آمنة مع نظام schema migrations لحمايتها أثناء التحديثات.
+                تُحفظ جميع بياناتك محليًا في مجلد المستخدم (`userData`) بطريقة ذرية تضمن عدم تلف البيانات عند إيقاف التشغيل المفاجئ. يحتفظ التطبيق تلقائيًا بآخر 5 نسخ احتياطية دورية متناوبة في مجلد backups.
               </p>
             </div>
 
@@ -653,6 +790,17 @@ export const SettingsView: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Custom Task Modal */}
+      {(showCreateTaskModal || editingTask) && (
+        <CustomTaskModal
+          taskToEdit={editingTask}
+          onClose={() => {
+            setShowCreateTaskModal(false)
+            setEditingTask(null)
+          }}
+        />
       )}
 
       {/* Confirmation modal for Import */}

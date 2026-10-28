@@ -28,12 +28,10 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          'Readex Pro',
           'Segoe UI',
-          'Tahoma',
-          'SF Pro Display',
-          '-apple-system',
-          'BlinkMacSystemFont',
           'system-ui',
+          '-apple-system',
           'sans-serif'
         ]
       }
@@ -41,3 +39,4 @@ module.exports = {
   },
   plugins: []
 }
+

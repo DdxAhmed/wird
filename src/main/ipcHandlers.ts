@@ -3,8 +3,10 @@ import { IPC_CHANNELS } from '../shared/constants'
 import { AppSettings, TaskDefinition } from '../shared/types'
 import { AutoLauncher } from './autoLauncher'
 import { AutoUpdateManager } from './autoUpdater'
+import { MiniReminderManager } from './miniReminderManager'
 import { NotificationManager } from './notificationManager'
 import { SchedulerManager } from './schedulerManager'
+import { SessionManager } from './sessionManager'
 import { StoreManager } from './store'
 
 export function setupIpcHandlers(
@@ -12,6 +14,8 @@ export function setupIpcHandlers(
   scheduler: SchedulerManager,
   notifications: NotificationManager,
   updater: AutoUpdateManager,
+  sessionManager: SessionManager,
+  miniReminderManager: MiniReminderManager,
   getMainWindow: () => BrowserWindow | null
 ): void {
   // Store & Settings
@@ -40,6 +44,18 @@ export function setupIpcHandlers(
     }
   )
 
+  ipcMain.handle(IPC_CHANNELS.ADD_TASK, async (_event, taskData: Omit<TaskDefinition, 'id' | 'isDefault'>) => {
+    if (!taskData || !taskData.name) {
+      throw new Error('Invalid task data')
+    }
+    return store.addTask(taskData)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DELETE_TASK, async (_event, taskId: string) => {
+    if (!taskId) throw new Error('Task ID is required')
+    return store.deleteTask(taskId)
+  })
+
   ipcMain.handle(IPC_CHANNELS.RESET_TASKS, async () => {
     return store.resetTasksToDefault()
   })
@@ -60,6 +76,16 @@ export function setupIpcHandlers(
     return store.undoCompletion(occurrenceId)
   })
 
+  ipcMain.handle(
+    IPC_CHANNELS.UPDATE_PROGRESS,
+    async (_event, occurrenceId: string, current: number, total?: number, unit?: string) => {
+      if (!occurrenceId || typeof current !== 'number') {
+        throw new Error('Invalid progress parameters')
+      }
+      return store.updateProgress(occurrenceId, current, total, unit)
+    }
+  )
+
   ipcMain.handle(IPC_CHANNELS.SNOOZE_TASK, async (_event, occurrenceId: string, minutes: number) => {
     if (!occurrenceId || typeof minutes !== 'number') {
       throw new Error('Invalid snooze parameters')
@@ -74,6 +100,53 @@ export function setupIpcHandlers(
 
   ipcMain.handle(IPC_CHANNELS.RESUME_REMINDERS, async () => {
     return store.resumeReminders()
+  })
+
+  // Focus Session («جلسة تفرّغ»)
+  ipcMain.handle(
+    IPC_CHANNELS.START_SESSION,
+    async (_event, taskId: string, occurrenceId: string, durationMinutes?: number) => {
+      const task = store.getData().tasks.find((t) => t.id === taskId)
+      if (!task) {
+        throw new Error('Task not found')
+      }
+      // If mini reminder is visible, close it
+      miniReminderManager.close()
+      const duration = durationMinutes || task.defaultFocusDurationMinutes || 15
+      return sessionManager.startSession(task, occurrenceId, duration)
+    }
+  )
+
+  ipcMain.handle(IPC_CHANNELS.GET_ACTIVE_SESSION, async () => {
+    return sessionManager.getActiveSession()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PAUSE_SESSION, async () => {
+    return sessionManager.pauseSession()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RESUME_SESSION, async () => {
+    return sessionManager.resumeSession()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.EXTEND_SESSION, async (_event, minutes: number) => {
+    return sessionManager.extendSession(minutes)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CONFIRM_SESSION, async () => {
+    return sessionManager.confirmSession()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ABANDON_SESSION, async () => {
+    return sessionManager.abandonSession()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TOGGLE_SESSION_ALWAYS_ON_TOP, async () => {
+    return sessionManager.toggleAlwaysOnTop()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TOGGLE_SESSION_SECONDS, async () => {
+    return sessionManager.toggleShowSeconds()
   })
 
   // Backup & Restore
@@ -118,6 +191,11 @@ export function setupIpcHandlers(
         win.focus()
       }
     })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TEST_MINI_REMINDER, async () => {
+    miniReminderManager.testReminder()
+    return true
   })
 
   ipcMain.handle(IPC_CHANNELS.MINIMIZE_WINDOW, () => {

@@ -3,22 +3,26 @@ import { promises as fs } from 'fs'
 import { join } from 'path'
 import { CURRENT_SCHEMA_VERSION, DEFAULT_TASKS, INITIAL_STORE_DATA } from '../shared/constants'
 import { migrateStoreData, validateImportJson } from '../shared/migrations'
-import { AppSettings, TaskDefinition, WirdStoreData } from '../shared/types'
+import { AppSettings, FocusSession, TaskDefinition, TaskProgress, WirdStoreData } from '../shared/types'
 
 export class StoreManager {
   private filePath: string
-  private backupPath: string
+  private backupDir: string
+  private legacyBackupPath: string
   private data: WirdStoreData = { ...INITIAL_STORE_DATA }
   private changeListeners: Array<(data: WirdStoreData) => void> = []
 
   constructor(customPath?: string) {
     const dir = customPath || (app ? app.getPath('userData') : process.cwd())
     this.filePath = join(dir, 'wird-store.json')
-    this.backupPath = join(dir, 'wird-store.backup.json')
+    this.legacyBackupPath = join(dir, 'wird-store.backup.json')
+    this.backupDir = join(dir, 'backups')
   }
 
   public async initialize(): Promise<void> {
     try {
+      await fs.mkdir(this.backupDir, { recursive: true }).catch(() => {})
+
       const fileExists = await fs
         .access(this.filePath)
         .then(() => true)
@@ -44,26 +48,21 @@ export class StoreManager {
         await fs.writeFile(corruptedPath, content, 'utf-8').catch(() => {})
 
         // Try restoring from recent backup if available
-        const backupExists = await fs
-          .access(this.backupPath)
-          .then(() => true)
-          .catch(() => false)
-
-        if (backupExists) {
-          try {
-            const backupContent = await fs.readFile(this.backupPath, 'utf-8')
-            parsed = JSON.parse(backupContent)
-          } catch {
-            parsed = null
-          }
-        }
+        parsed = await this.findLatestValidBackup()
       }
 
       const { data, migrated, fromVersion } = migrateStoreData(parsed)
 
       if (migrated && fromVersion > 0) {
         // Create backup of old version before saving migrated data
-        await fs.writeFile(this.backupPath, content, 'utf-8').catch(() => {})
+        await this.createRotatingBackup(content)
+      }
+
+      // Check if there was an active session that was interrupted by crash or reboot
+      if (data.activeSession && (data.activeSession.status === 'active' || data.activeSession.status === 'paused')) {
+        // Mark as paused so user can intentionally resume or finish; app downtime is NOT counted as reading time!
+        data.activeSession.status = 'paused'
+        data.activeSession.pausedAt = Date.now()
       }
 
       this.data = data
@@ -102,6 +101,33 @@ export class StoreManager {
     return this.data
   }
 
+  public async addTask(
+    taskData: Omit<TaskDefinition, 'id' | 'isDefault'> & { id?: string }
+  ): Promise<WirdStoreData> {
+    const id = taskData.id || `task-${Date.now()}`
+    const exists = this.data.tasks.some((t) => t.id === id)
+    const finalId = exists ? `${id}-${Date.now().toString().slice(-4)}` : id
+
+    const task: TaskDefinition = {
+      ...taskData,
+      id: finalId,
+      isCustom: true,
+      isDefault: false
+    }
+
+    this.data.tasks.push(task)
+    await this.persist()
+    this.emitChange()
+    return this.data
+  }
+
+  public async deleteTask(taskId: string): Promise<WirdStoreData> {
+    this.data.tasks = this.data.tasks.filter((t) => t.id !== taskId)
+    await this.persist()
+    this.emitChange()
+    return this.data
+  }
+
   public async resetTasksToDefault(): Promise<WirdStoreData> {
     this.data.tasks = [...DEFAULT_TASKS]
     await this.persist()
@@ -113,19 +139,30 @@ export class StoreManager {
     occurrenceId: string,
     taskId: string,
     cycleDate: string,
-    completedLate: boolean
+    completedLate: boolean,
+    progressCurrent?: number,
+    progressTarget?: number
   ): Promise<WirdStoreData> {
     this.data.completions[occurrenceId] = {
       occurrenceId,
       taskId,
       cycleDate,
       completedAt: Date.now(),
-      completedLate
+      completedLate,
+      progressCurrent,
+      progressTarget
     }
+
     // Remove snooze if active
     if (this.data.snoozes[occurrenceId]) {
       delete this.data.snoozes[occurrenceId]
     }
+
+    // If an active session for this occurrence is running, complete it
+    if (this.data.activeSession && this.data.activeSession.occurrenceId === occurrenceId) {
+      this.data.activeSession = null
+    }
+
     await this.persist()
     this.emitChange()
     return this.data
@@ -137,6 +174,22 @@ export class StoreManager {
       await this.persist()
       this.emitChange()
     }
+    return this.data
+  }
+
+  public async updateProgress(
+    occurrenceId: string,
+    current: number,
+    target?: number,
+    unit?: string
+  ): Promise<WirdStoreData> {
+    this.data.progress[occurrenceId] = {
+      current,
+      target: target ?? 10,
+      unit: unit ?? 'صفحات'
+    }
+    await this.persist()
+    this.emitChange()
     return this.data
   }
 
@@ -169,6 +222,27 @@ export class StoreManager {
     return this.data
   }
 
+  // Focus Session («جلسة تفرّغ»)
+  public async setActiveSession(session: FocusSession | null): Promise<WirdStoreData> {
+    this.data.activeSession = session
+    await this.persist()
+    this.emitChange()
+    return this.data
+  }
+
+  public async updateActiveSession(partial: Partial<FocusSession>): Promise<WirdStoreData> {
+    if (this.data.activeSession) {
+      this.data.activeSession = {
+        ...this.data.activeSession,
+        ...partial
+      }
+      await this.persist()
+      this.emitChange()
+    }
+    return this.data
+  }
+
+  // Backup & Restore
   public async exportJson(): Promise<string> {
     const exportPayload = {
       exportedAt: new Date().toISOString(),
@@ -191,14 +265,69 @@ export class StoreManager {
     const parsed = JSON.parse(jsonString)
     const payload = parsed.data || parsed
 
-    // Create safety backup before replacing
-    await fs.writeFile(this.backupPath, JSON.stringify(this.data, null, 2), 'utf-8').catch(() => {})
+    // Create rotating safety backup before replacing
+    await this.createRotatingBackup(JSON.stringify(this.data, null, 2))
 
     const { data } = migrateStoreData(payload)
     this.data = data
     await this.persist()
     this.emitChange()
     return true
+  }
+
+  public async createRotatingBackup(rawContent?: string): Promise<void> {
+    try {
+      await fs.mkdir(this.backupDir, { recursive: true }).catch(() => {})
+      const content = rawContent || JSON.stringify(this.data, null, 2)
+      const now = new Date()
+      const dateStr = `${now.toISOString().replace(/[:.]/g, '-').slice(0, 23)}-${Math.random().toString(36).slice(2, 6)}`
+      const fileName = `wird-backup-${dateStr}.json`
+      const targetPath = join(this.backupDir, fileName)
+
+      await fs.writeFile(targetPath, content, 'utf-8')
+      // Also update legacy single backup path for backward compatibility
+      await fs.writeFile(this.legacyBackupPath, content, 'utf-8').catch(() => {})
+
+      // Prune old backups: keep maximum 5 most recent backups
+      const files = await fs.readdir(this.backupDir).catch(() => [])
+      const backupFiles = files
+        .filter((f) => f.startsWith('wird-backup-') && f.endsWith('.json'))
+        .sort()
+
+      if (backupFiles.length > 5) {
+        const toDelete = backupFiles.slice(0, backupFiles.length - 5)
+        for (const oldFile of toDelete) {
+          await fs.unlink(join(this.backupDir, oldFile)).catch(() => {})
+        }
+      }
+    } catch (err) {
+      console.error('Failed to create rotating backup:', err)
+    }
+  }
+
+  private async findLatestValidBackup(): Promise<unknown> {
+    try {
+      const files = await fs.readdir(this.backupDir).catch(() => [])
+      const backupFiles = files
+        .filter((f) => f.startsWith('wird-backup-') && f.endsWith('.json'))
+        .sort()
+        .reverse()
+
+      for (const file of backupFiles) {
+        try {
+          const content = await fs.readFile(join(this.backupDir, file), 'utf-8')
+          const parsed = JSON.parse(content)
+          if (parsed && typeof parsed === 'object') return parsed
+        } catch {}
+      }
+
+      // Check legacy single backup
+      const legacyContent = await fs.readFile(this.legacyBackupPath, 'utf-8').catch(() => '')
+      if (legacyContent) {
+        return JSON.parse(legacyContent)
+      }
+    } catch {}
+    return null
   }
 
   public onChange(listener: (data: WirdStoreData) => void): () => void {
@@ -230,7 +359,6 @@ export class StoreManager {
       await fs.rename(tempPath, this.filePath)
     } catch (err) {
       console.error('Failed to write store file atomically:', err)
-      // Cleanup temp if it exists
       await fs.unlink(tempPath).catch(() => {})
       throw err
     }

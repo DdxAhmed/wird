@@ -3,20 +3,18 @@ import { translations } from '@shared/i18n'
 import { getTaskOccurrence } from '@shared/scheduler'
 import { Language, TaskDefinition } from '@shared/types'
 import { useApp } from '../context/AppContext'
+import { ProgressModal } from './ProgressModal'
 import { QuickSnoozeModal } from './QuickSnoozeModal'
 import {
-  Bell,
   BookOpen,
-  Calendar,
   Check,
   CheckCircle,
   Clock,
   Moon,
+  Play,
+  Plus,
   RotateCcw,
-  Sun,
-  Volume2,
-  VolumeX,
-  Zap
+  Sun
 } from 'lucide-react'
 
 interface TaskCardProps {
@@ -25,8 +23,9 @@ interface TaskCardProps {
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, isHighlighted }) => {
-  const { storeData, completeTask, undoCompleteTask, showToast } = useApp()
+  const { storeData, completeTask, undoCompleteTask, startSession, showToast } = useApp()
   const [showSnoozeModal, setShowSnoozeModal] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(false)
 
   if (!storeData) return null
 
@@ -36,6 +35,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isHighlighted }) => {
   const occurrence = getTaskOccurrence(task, storeData)
   const taskName = task.name[lang] || task.name.ar
   const taskDesc = task.description ? task.description[lang] || task.description.ar : ''
+
+  // Progress for this occurrence
+  const taskProgress = storeData.progress[occurrence.occurrenceId]
+  const currentProgress = taskProgress ? taskProgress.current : 0
+  const targetTotal = task.target?.total || 10
+  const targetUnit = task.target?.unit || 'صفحات'
+  const hasTarget = Boolean(task.target?.enabled)
 
   // Icon based on task ID
   const TaskIcon = () => {
@@ -56,6 +62,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isHighlighted }) => {
       minute: '2-digit',
       hour12: true
     }).format(new Date(ts))
+  }
+
+  const handleStartSession = async () => {
+    const duration = task.defaultFocusDurationMinutes || 15
+    await startSession(task.id, occurrence.occurrenceId, duration)
   }
 
   const handleMarkDone = async (isLate = false) => {
@@ -226,6 +237,31 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isHighlighted }) => {
           </div>
         </div>
 
+        {/* Optional Target / Progress Section */}
+        {hasTarget && (
+          <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center justify-between text-xs">
+            <div className="space-y-1">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">
+                {t.taskCard.progressLabel}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-emerald-700 dark:text-emerald-300 font-mono text-sm">
+                  {currentProgress} / {targetTotal}
+                </span>
+                <span className="text-slate-500">{targetUnit}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowProgressModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 transition-colors font-medium text-xs shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{t.taskCard.updateProgress}</span>
+            </button>
+          </div>
+        )}
+
         {/* Bottom row: Interactive Actions */}
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           {occurrence.status === 'completed' ? (
@@ -243,68 +279,49 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isHighlighted }) => {
                 <span>{t.actions.undo}</span>
               </button>
             </div>
-          ) : occurrence.status === 'due' ? (
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => handleMarkDone(false)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs shadow-lg shadow-emerald-600/25 active:scale-95 transition-all"
-              >
-                <Check className="w-4 h-4" />
-                <span>{t.actions.markDone}</span>
-              </button>
-
-              <button
-                onClick={() => setShowSnoozeModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 font-medium text-xs transition-colors"
-              >
-                <Clock className="w-4 h-4" />
-                <span>{t.actions.snooze}</span>
-              </button>
-            </div>
-          ) : occurrence.status === 'snoozed' ? (
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                مؤجلة حتى {formatTime(occurrence.snoozedUntil || null)}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowSnoozeModal(true)}
-                  className="px-3 py-1.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition-colors"
-                >
-                  تعديل التأجيل
-                </button>
-                <button
-                  onClick={() => handleMarkDone(false)}
-                  className="px-4 py-1.5 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors"
-                >
-                  تمت القراءة الآن
-                </button>
-              </div>
-            </div>
-          ) : occurrence.status === 'expired' ? (
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs text-slate-400 dark:text-slate-500">
-                {t.status.expired}
-              </span>
-              <button
-                onClick={() => handleMarkDone(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>{t.actions.markDoneLate}</span>
-              </button>
-            </div>
           ) : (
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs text-slate-400 dark:text-slate-500">
-                تبدأ في الساعة {task.startTime}
-              </span>
-              <button
-                onClick={() => handleMarkDone(false)}
-                className="text-xs text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 underline transition-colors"
-              >
-                قرأتها مسبقًا؟ اضغط هنا للتأكيد
-              </button>
+            <div className="flex flex-wrap items-center justify-between w-full gap-2">
+              <div className="flex items-center gap-2">
+                {/* «هبدأ دلوقتي» Focus Session */}
+                <button
+                  onClick={handleStartSession}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>{t.actions.startSession}</span>
+                </button>
+
+                {/* «تمّت القراءة» */}
+                <button
+                  onClick={() => handleMarkDone(occurrence.status === 'expired')}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 font-semibold text-xs border border-slate-200/80 dark:border-slate-700/80 transition-colors"
+                >
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>
+                    {occurrence.status === 'expired'
+                      ? t.actions.markDoneLate
+                      : t.actions.markDone}
+                  </span>
+                </button>
+
+                {/* «تأجيل» (only if active window) */}
+                {occurrence.status !== 'expired' && (
+                  <button
+                    onClick={() => setShowSnoozeModal(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 font-medium text-xs transition-colors"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{t.actions.snooze}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Status hint if upcoming */}
+              {occurrence.status === 'upcoming' && (
+                <span className="text-[11px] text-slate-400">
+                  تبدأ في الساعة {task.startTime}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -314,7 +331,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, isHighlighted }) => {
         <QuickSnoozeModal
           occurrenceId={occurrence.occurrenceId}
           defaultMinutes={task.snoozeDurationMinutes}
+          windowEndTime={task.endTime}
           onClose={() => setShowSnoozeModal(false)}
+        />
+      )}
+
+      {showProgressModal && hasTarget && (
+        <ProgressModal
+          task={task}
+          occurrenceId={occurrence.occurrenceId}
+          currentProgress={currentProgress}
+          targetTotal={targetTotal}
+          targetUnit={targetUnit}
+          onClose={() => setShowProgressModal(false)}
         />
       )}
     </>

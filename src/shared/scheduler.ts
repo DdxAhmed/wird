@@ -62,7 +62,6 @@ export function calculateTaskWindow(
   const isOvernight = startH > endH || (startH === endH && startM > endM)
 
   if (!isOvernight) {
-    // Standard window: both start and end are on the same calendar day
     const startDate = setTimeOnDate(nowDate, task.startTime)
     const endDate = setTimeOnDate(nowDate, task.endTime)
     const cycleDate = formatLocalDate(nowDate)
@@ -75,12 +74,11 @@ export function calculateTaskWindow(
   }
 
   // Overnight window: e.g. 21:00 to 02:00
-  // Check if current time is past midnight but before endTime
   const currentMinutes = nowDate.getHours() * 60 + nowDate.getMinutes()
   const endMinutes = endH * 60 + endM
 
   if (currentMinutes < endMinutes) {
-    // We are in the morning part of the cycle that started yesterday evening
+    // In morning part of cycle that started yesterday
     const yesterday = new Date(nowDate.getTime())
     yesterday.setDate(yesterday.getDate() - 1)
 
@@ -96,7 +94,7 @@ export function calculateTaskWindow(
     }
   }
 
-  // Otherwise, the cycle starts today evening and ends tomorrow morning
+  // Cycle starts today evening and ends tomorrow morning
   const tomorrow = new Date(nowDate.getTime())
   tomorrow.setDate(tomorrow.getDate() + 1)
 
@@ -125,6 +123,7 @@ export function getTaskOccurrence(
   const occurrenceId = `${task.id}:${cycleDate}`
 
   const completionRecord = store.completions?.[occurrenceId]
+  const progress = store.progress?.[occurrenceId]
   const snoozedUntil = store.snoozes?.[occurrenceId]
 
   let status: TaskStatus = 'upcoming'
@@ -134,7 +133,6 @@ export function getTaskOccurrence(
   } else if (!task.enabled) {
     status = 'upcoming'
   } else {
-    // Check if task is scheduled for this cycle day of week
     const cycleDateObj = parseLocalDate(cycleDate)
     const dayOfWeek = cycleDateObj.getDay()
     const isDayScheduled = task.daysOfWeek.includes(dayOfWeek)
@@ -169,14 +167,12 @@ export function getTaskOccurrence(
     const intervalMs = Math.max(1, task.repeatIntervalMinutes) * 60 * 1000
 
     if (lastNotified === 0) {
-      // Never notified yet in this window -> due immediately
       nextReminderTime = Math.min(now, windowStart)
     } else {
       const nextDue = lastNotified + intervalMs
       if (nextDue <= windowEnd) {
         nextReminderTime = nextDue
       } else {
-        // No more reminders fit inside this window
         nextReminderTime = null
       }
     }
@@ -190,6 +186,7 @@ export function getTaskOccurrence(
     windowEnd,
     status,
     completionRecord,
+    progress,
     snoozedUntil,
     nextReminderTime,
     isOvernight
@@ -198,6 +195,10 @@ export function getTaskOccurrence(
 
 /**
  * Checks if a reminder should actually fire right now for this task.
+ * Central Coordination:
+ * 1. Active focus session suspends all reminders.
+ * 2. User-chosen pause suspends reminders.
+ * 3. Inside window, enabled, not completed, not snoozed, interval elapsed.
  */
 export function shouldTriggerReminder(
   taskInfo: TaskOccurrenceInfo,
@@ -206,7 +207,17 @@ export function shouldTriggerReminder(
 ): boolean {
   const now = clock.now()
 
-  // If reminders are paused globally
+  // Priority 1: Focus Session actively running
+  if (
+    store.activeSession &&
+    (store.activeSession.status === 'active' ||
+      store.activeSession.status === 'paused' ||
+      store.activeSession.status === 'awaiting_confirmation')
+  ) {
+    return false
+  }
+
+  // Priority 2: Globally paused reminders
   if (store.settings.pausedUntil && store.settings.pausedUntil > now) {
     return false
   }
@@ -266,9 +277,6 @@ export function getDueTasksForNotification(
   return dueTasks
 }
 
-/**
- * Generates an occurrence ID deterministically.
- */
 export function getOccurrenceId(taskId: string, cycleDate: string): string {
   return `${taskId}:${cycleDate}`
 }

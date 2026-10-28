@@ -3,7 +3,7 @@ import { Language } from './types'
 export interface TranslationDictionary {
   appName: string
   appSubtitle: string
-  tagline: string
+  footerTagline: string
 
   // Navigation
   tabs: {
@@ -15,6 +15,7 @@ export interface TranslationDictionary {
 
   // Common actions
   actions: {
+    startSession: string
     markDone: string
     markDoneLate: string
     snooze: string
@@ -25,19 +26,25 @@ export interface TranslationDictionary {
     close: string
     confirm: string
     edit: string
+    delete: string
     reset: string
     pause: string
     resume: string
+    addTask: string
     exportData: string
     importData: string
     checkForUpdates: string
     downloadUpdate: string
     restartAndInstall: string
     testNotification: string
+    testMiniReminder: string
     getStarted: string
     next: string
     back: string
     finish: string
+    reportIssue: string
+    viewLicense: string
+    viewRepo: string
   }
 
   // Task statuses
@@ -61,6 +68,11 @@ export interface TranslationDictionary {
     completedAt: string
     windowEnded: string
     todayProgress: string
+    defaultDuration: string
+    progressLabel: string
+    updateProgress: string
+    targetReachedConfirm: string
+    snoozePastWindowWarning: string
   }
 
   // History
@@ -73,25 +85,68 @@ export interface TranslationDictionary {
     late: string
     missed: string
     noHistory: string
+    hideHistoryOption: string
   }
 
-  // Onboarding
-  onboarding: {
-    welcomeTitle: string
-    welcomeSubtitle: string
-    step1Title: string
-    step1Desc: string
-    autoStartLabel: string
-    autoStartDesc: string
-    step2Title: string
-    step2Desc: string
-    step3Title: string
-    step3Desc: string
-    step4Title: string
-    step4Desc: string
-    testNotificationSuccess: string
-    readyTitle: string
-    readyDesc: string
+  // Focus Session («جلسة تفرّغ»)
+  session: {
+    title: string
+    subtitle: string
+    startTitle: string
+    durationLabel: string
+    minutesUnit: string
+    timeRemaining: string
+    alwaysOnTop: string
+    toggleSeconds: string
+    earlyExitButton: string
+    earlyExitHint: string
+    earlyExitConfirmTitle: string
+    earlyExitConfirmDesc: string
+    pausedDueToLockTitle: string
+    pausedDueToLockDesc: string
+    resumeButton: string
+    crashRecoveryTitle: string
+    crashRecoveryDesc: string
+    timerFinishedQuestion: string
+    yesCompleted: string
+    needMoreTime: string
+    finishWithoutConfirm: string
+    extendSelectTitle: string
+    postSessionSummaryTitle: string
+    postSessionSummaryDesc: string
+  }
+
+  // Mini Reminder Window
+  miniReminder: {
+    dueTitle: string
+    dueSummary: string
+    dismiss: string
+    enableLabel: string
+    enableDesc: string
+    positionLabel: string
+    positions: {
+      bottomRight: string
+      topRight: string
+      bottomLeft: string
+      topLeft: string
+    }
+  }
+
+  // Custom Task Modal
+  customTask: {
+    createTitle: string
+    editTitle: string
+    nameLabel: string
+    startLabel: string
+    endLabel: string
+    intervalLabel: string
+    durationLabel: string
+    targetToggle: string
+    targetAmount: string
+    targetUnit: string
+    unitPlaceholder: string
+    deleteConfirmTitle: string
+    deleteConfirmDesc: string
   }
 
   // Settings
@@ -154,6 +209,8 @@ export interface TranslationDictionary {
     resetDefaultsDesc: string
     resetConfirmTitle: string
     resetConfirmDesc: string
+    diagnosticsTitle: string
+    dndHelp: string
   }
 
   // Tray
@@ -182,6 +239,7 @@ export interface TranslationDictionary {
     dueSingleBody: string
     dueMultipleTitle: string
     dueMultipleBody: string
+    actionStart: string
     actionDone: string
     actionSnooze: string
     actionOpen: string
@@ -192,14 +250,26 @@ export interface TranslationDictionary {
   about: {
     title: string
     version: string
-    description: string
-    author: string
-    license: string
-    githubRepo: string
-    roadmapTitle: string
-    roadmapItems: string[]
-    principlesTitle: string
-    principles: string[]
+    exactDescription: string
+    privacyNote: string
+    footerNote: string
+  }
+
+  // Onboarding
+  onboarding: {
+    welcomeTitle: string
+    readyTitle: string
+    testNotificationSuccess: string
+    step1Title: string
+    step1Desc: string
+    autoStartLabel: string
+    autoStartDesc: string
+    step2Title: string
+    step2Desc: string
+    step3Title: string
+    step3Desc: string
+    step4Title: string
+    step4Desc: string
   }
 
   // Days of week
@@ -210,7 +280,7 @@ export const translations: Record<Language, TranslationDictionary> = {
   ar: {
     appName: 'وِرد',
     appSubtitle: 'رفيقك الهادئ للأذكار والورد اليومي',
-    tagline: 'ألا بذكر الله تطمئن القلوب',
+    footerTagline: 'ابتغاء وجه الله، وعونًا على دوام الذكر.',
 
     tabs: {
       home: 'اليوم',
@@ -220,29 +290,36 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
 
     actions: {
-      markDone: 'تمت القراءة بحمد الله',
+      startSession: 'هبدأ دلوقتي',
+      markDone: 'تمّت القراءة',
       markDoneLate: 'تأكيد الإنجاز (خارج الفترة)',
       snooze: 'تأجيل',
       snoozeMinutes: 'تأجيل {minutes} دقيقة',
-      undo: 'تراجع عن الإنجاز',
+      undo: 'تراجع عن التأكيد',
       save: 'حفظ التعديلات',
       cancel: 'إلغاء',
       close: 'إغلاق',
       confirm: 'تأكيد',
       edit: 'تعديل',
+      delete: 'حذف',
       reset: 'استعادة الافتراضي',
       pause: 'إيقاف مؤقت',
       resume: 'استئناف التذكيرات',
+      addTask: 'إضافة مهمة جديدة',
       exportData: 'تصدير نسخة احتياطية',
       importData: 'استيراد بيانات',
-      checkForUpdates: 'البحث عن تحديثات',
+      checkForUpdates: 'البحث عن تحديث',
       downloadUpdate: 'تنزيل التحديث',
       restartAndInstall: 'إعادة التشغيل والتثبيت',
-      testNotification: 'تجربة إرسال إشعار',
+      testNotification: 'إرسال إشعار تجريبي',
+      testMiniReminder: 'تجربة نافذة التذكير المصغّرة',
       getStarted: 'ابدأ الاستخدام',
       next: 'التالي',
       back: 'السابق',
-      finish: 'إنهاء الإعداد'
+      finish: 'إنهاء الإعداد',
+      reportIssue: 'الإبلاغ عن مشكلة',
+      viewLicense: 'الترخيص (MIT)',
+      viewRepo: 'مستودع المشروع على GitHub'
     },
 
     status: {
@@ -263,7 +340,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       nextReminder: 'التذكير القادم:',
       completedAt: 'أُنجزت الساعة:',
       windowEnded: 'انتهت فترة التذكير لهذه الدورة',
-      todayProgress: 'إنجاز اليوم'
+      todayProgress: 'إنجاز اليوم',
+      defaultDuration: 'مدة الجلسة:',
+      progressLabel: 'التقدم:',
+      updateProgress: 'تسجيل تقدم جزئي',
+      targetReachedConfirm: 'تم بلوغ الهدف! اضغط لتأكيد إتمام الورد',
+      snoozePastWindowWarning: 'تنبيه: وقت التأجيل المختار يتجاوز نهاية فترة المهمة ({endTime}). لن يتم إرسال تذكيرات بعد انتهاء الفترة.'
     },
 
     history: {
@@ -272,27 +354,68 @@ export const translations: Record<Language, TranslationDictionary> = {
       last7Days: 'آخر 7 أيام',
       completedCount: 'إجمالي المكتمل',
       onTime: 'في موعدها',
-      late: 'بعد الموعد',
+      late: 'بعد انقضاء الفترة',
       missed: 'لم تؤكد',
-      noHistory: 'لا توجد بيانات سابقة بعد. سيبدأ السجل بالظهور مع استمرارك في القراءة.'
+      noHistory: 'لا توجد بيانات سابقة بعد. سيبدأ السجل بالظهور مع استمرارك في القراءة.',
+      hideHistoryOption: 'إخفاء السجل الأسبوعي من الواجهة الرئيسية'
     },
 
-    onboarding: {
-      welcomeTitle: 'أهلاً بك في تطبيق «وِرد»',
-      welcomeSubtitle: 'تطبيق هادئ ومستقل صُمم ليعينك على دوام ذكر الله وتلاوة كتابه أثناء انشغالك بالعمل على حاسوبك.',
-      step1Title: 'التشغيل التلقائي',
-      step1Desc: 'لكي لا تنسى أذكارك، يُفضل تشغيل التطبيق في الخلفية عند تسجيل دخولك إلى Windows.',
-      autoStartLabel: 'تشغيل «وِرد» تلقائيًا مع بدء تشغيل Windows',
-      autoStartDesc: 'يعمل التطبيق بخفة في علبة النظام (System Tray) دون إزعاج أو إبطاء للحاسوب.',
-      step2Title: 'ضبط المهام الثلاث',
-      step2Desc: 'راجع أوقات التذكير المقترحة؛ يمكنك تخصيص بداية ونهاية كل فترة بما يناسب جدولك اليومي.',
-      step3Title: 'فواصل التكرار والإشعارات',
-      step3Desc: 'يُكرر التطبيق التنبيه حتى تؤكد الإنجاز أو ينتهي الوقت المحدد لكل مهمة.',
-      step4Title: 'المظهر وتجربة الإشعار',
-      step4Desc: 'اختر مظهرك المفضل وتأكد من وصول إشعارات Windows بشكل سليم.',
-      testNotificationSuccess: 'تم إرسال إشعار تجريبي! إذا لم تشاهده، يرجى مراجعة إعدادات الإشعارات في Windows.',
-      readyTitle: 'أنت الآن جاهز!',
-      readyDesc: 'سيبقى «وِرد» رفيقًا خفيفًا على جهازك. يمكنك دائمًا الوصول إليه من أيقونة شريط المهام بجانب الساعة.'
+    session: {
+      title: 'جلسة تفرّغ',
+      subtitle: 'مساحة هادئة وخالية من التشتيت لأداء وردك',
+      startTitle: 'بدء جلسة تفرّغ',
+      durationLabel: 'مدة الجلسة (بالدقائق):',
+      minutesUnit: 'دقيقة',
+      timeRemaining: 'الوقت المتبقي',
+      alwaysOnTop: 'إبقاء النافذة فوق النوافذ الأخرى',
+      toggleSeconds: 'إظهار / إخفاء الثواني',
+      earlyExitButton: 'إنهاء الجلسة مبكرًا',
+      earlyExitHint: 'اضغط مطولاً للإنهاء',
+      earlyExitConfirmTitle: 'هل ترغب حقًا في إنهاء الجلسة مبكرًا؟',
+      earlyExitConfirmDesc: 'الخروج المبكر لن يسجّل المهمة كمكتملة، وسيحتفظ بجدول التذكيرات المعتاد.',
+      pausedDueToLockTitle: 'الجلسة متوقفة مؤقتًا',
+      pausedDueToLockDesc: 'تم إيقاف العداد مؤقتًا بسبب قفل الشاشة أو سكون الجهاز. وقت السكون لا يُحتسب تلقائيًا كوقت قراءة.',
+      resumeButton: 'استئناف الجلسة الآن',
+      crashRecoveryTitle: 'استعادة جلسة سابقة',
+      crashRecoveryDesc: 'تم العثور على جلسة تفرّغ لم تكتمل قبل إغلاق التطبيق. هل ترغب في استئناف الوقت المتبقي؟',
+      timerFinishedQuestion: 'هل أتممت القراءة؟',
+      yesCompleted: 'نعم، تمّت القراءة بحمد الله',
+      needMoreTime: 'أحتاج وقتًا إضافيًا',
+      finishWithoutConfirm: 'إنهاء دون تأكيد',
+      extendSelectTitle: 'اختر مدة التمديد الإضافية:',
+      postSessionSummaryTitle: 'تقبل الله طاعتكم',
+      postSessionSummaryDesc: 'لديك {count} مهام أخرى مستحقة الآن.'
+    },
+
+    miniReminder: {
+      dueTitle: 'تذكير وِرد',
+      dueSummary: 'لديك {count} مهام مستحقة الآن',
+      dismiss: 'إغلاق',
+      enableLabel: 'تفعيل نافذة التذكير المصغّرة فوق النوافذ',
+      enableDesc: 'نافذة خفيفة تظهر بهدوء دون سحب التركيز من لوحة المفاتيح أثناء عملك.',
+      positionLabel: 'موضع نافذة التذكير على الشاشة',
+      positions: {
+        bottomRight: 'أسفل اليمين',
+        topRight: 'أعلى اليمين',
+        bottomLeft: 'أسفل اليسار',
+        topLeft: 'أعلى اليسار'
+      }
+    },
+
+    customTask: {
+      createTitle: 'إضافة مهمة جديدة',
+      editTitle: 'تعديل المهمة',
+      nameLabel: 'اسم المهمة',
+      startLabel: 'بداية فترة التذكير',
+      endLabel: 'نهاية فترة التذكير',
+      intervalLabel: 'فاصل إعادة التذكير (دقائق)',
+      durationLabel: 'المدة الافتراضية لجلسة التفرغ (دقائق)',
+      targetToggle: 'تحديد هدف عددي (اختياري)',
+      targetAmount: 'العدد المستهدف',
+      targetUnit: 'الوحدة',
+      unitPlaceholder: 'مثل: صفحات، صفحة، تسبيحة، أجزاء',
+      deleteConfirmTitle: 'تأكيد حذف المهمة',
+      deleteConfirmDesc: 'هل أنت متأكد من رغبتك في حذف هذه المهمة وسجلاتها المرتبطة بها؟'
     },
 
     settings: {
@@ -353,7 +476,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetDefaultsLabel: 'استعادة الإعدادات الأصلية',
       resetDefaultsDesc: 'إعادة ضبط أوقات المهام والإعدادات إلى القيم الافتراضية مع الاحتفاظ بسجل الإنجاز.',
       resetConfirmTitle: 'تأكيد استعادة الافتراضي',
-      resetConfirmDesc: 'هل أنت متأكد من رغبتك في إعادة ضبط المهام والإعدادات؟'
+      resetConfirmDesc: 'هل أنت متأكد من رغبتك في إعادة ضبط المهام والإعدادات؟',
+      diagnosticsTitle: 'تشخيص التنبيهات وإعدادات النظام',
+      dndHelp: 'إذا لم تظهر التنبيهات، يرجى التأكد من تفعيل الإشعارات لتطبيق «وِرد» في إعدادات Windows، والتحقق من إيقاف وضع «Focus Assist» أو «Do Not Disturb».'
     },
 
     tray: {
@@ -377,36 +502,44 @@ export const translations: Record<Language, TranslationDictionary> = {
       testTitle: 'وِرد | تجربة التنبيه',
       testBody: 'هذا إشعار تجريبي من تطبيق وِرد. نظام التنبيهات يعمل بنجاح.',
       dueSingleTitle: 'حان موعد: {taskName}',
-      dueSingleBody: 'تذكير بـ {taskName}. انقر لتأكيد الإنجاز أو التأجيل.',
+      dueSingleBody: 'تذكير بـ {taskName}. انقر للبدء أو تأكيد الإنجاز.',
       dueMultipleTitle: 'مهام مستحقة في وِرد',
       dueMultipleBody: 'لديك {count} مهام مستحقة الآن: {taskNames}',
-      actionDone: 'تمت القراءة',
+      actionStart: 'هبدأ دلوقتي',
+      actionDone: 'تمّت القراءة',
       actionSnooze: 'تأجيل 15 دقيقة',
       actionOpen: 'فتح التطبيق',
       dndNote: 'ملاحظة: إذا كانت ميزة «Focus Assist» أو «Do Not Disturb» مفعلة في Windows، فقد تؤجل ظهور الإشعار.'
     },
 
     about: {
-      title: 'حول وِرد',
-      version: 'الإصدار',
-      description: '«وِرد» تطبيق مكتبي خفيف ومفتوح المصدر، مبني بأحدث تقنيات الويب وسطح المكتب، يهدف إلى مساعدة المسلم على المحافظة على أذكار الصباح والمساء والورد القرآني في بيئة عمله اليومية دون تشتيت أو إعلانات.',
-      author: 'فريق وِرد ومجتمع البرمجيات الحرة',
-      license: 'ترخيص MIT مفتوح المصدر',
-      githubRepo: 'مستودع المشروع على GitHub',
-      roadmapTitle: 'خارطة الطريق للإصدارات القادمة',
-      roadmapItems: [
-        'إضافة مهام وعادات مخصصة يحددها المستخدم.',
-        'نافذة تذكير صغيرة وسريعة (Mini Quick Popup) تبقى فوق النوافذ.',
-        'وضع تركيز ذكي (Focus Mode) يؤجل التذكيرات أثناء الاجتماعات.',
-        'ملخص أسبوعي وإحصائيات تفاعلية مع إمكانية إخفائها.',
-        'اختصارات لوحة مفاتيح شاملة للتأكيد السريع.'
-      ],
-      principlesTitle: 'مبادئ تصميم وِرد',
-      principles: [
-        'محلي بالكامل (Offline-first): لا يحتاج خوادم، ولا يرسل أي بيانات خاصة أو تتبع.',
-        'لغة هادئة ورفيقة: تذكير محبب ومحفز دون إشعار بالذنب أو الإلحاح المزعج.',
-        'احترام موارد الجهاز: خفيف وسريع ولا يستهلك المعالج أو الذاكرة في الخلفية.'
-      ]
+      title: 'حول التطبيق',
+      version: 'رقم الإصدار:',
+      exactDescription: `وِرد
+
+تطبيق مجاني ومفتوح المصدر، يساعدك على المحافظة على أذكار الصباح والمساء والورد اليومي، بتذكيرات منتظمة ومتابعة بسيطة لإنجازك.
+
+صُنع ابتغاء وجه الله، دون إعلانات أو اشتراكات، ودون جمع بياناتك الشخصية. تُحفظ بياناتك على جهازك، وتعمل التذكيرات دون اتصال بالإنترنت.
+
+نسأل الله أن ينفع به، وأن يعيننا وإياكم على ذكره وشكره وحسن عبادته.`,
+      privacyNote: 'معلومات الخصوصية والاتصال: يعمل التطبيق محليًا بالكامل دون حاجة للإنترنت. الاتصال الشبكي الوحيد المحدود هو الاستعلام الدوري عن التحديثات وتنزيلها من مستودع GitHub الرسمي عند تفعيل ذلك.',
+      footerNote: 'ابتغاء وجه الله، وعونًا على دوام الذكر.'
+    },
+
+    onboarding: {
+      welcomeTitle: 'مرحبًا بك في تطبيق وِرد',
+      readyTitle: 'تم إعداد وِرد بنجاح! نسأل الله القبول والتوفيق.',
+      testNotificationSuccess: 'تم إرسال الإشعار التجريبي بنجاح!',
+      step1Title: 'التشغيل التلقائي مع النظام',
+      step1Desc: 'هل ترغب في تشغيل وِرد تلقائيًا عند تسجيل الدخول إلى Windows لمساعدتك على استمرار الذكر؟',
+      autoStartLabel: 'تشغيل وِرد تلقائيًا مع بدء تشغيل Windows',
+      autoStartDesc: 'يضمن تذكيرك دون الحاجة لتذكر فتح التطبيق يدويًا كل يوم.',
+      step2Title: 'فترات المهام الأساسية',
+      step2Desc: 'اضبط مواعيد أذكار الصباح والمساء والورد اليومي بما يناسب جدولك اليومي:',
+      step3Title: 'تجربة التنبيهات والأصوات',
+      step3Desc: 'تأكد من قدرة وِرد على إرسال الإشعارات الصوتية بهدوء دون إزعاج:',
+      step4Title: 'المظهر والسمة',
+      step4Desc: 'اختر المظهر المريح لعينيك أثناء العمل على الجهاز:'
     },
 
     days: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
@@ -415,7 +548,7 @@ export const translations: Record<Language, TranslationDictionary> = {
   en: {
     appName: 'Wird',
     appSubtitle: 'Your calm companion for daily remembrance and Wird',
-    tagline: 'Verily, in the remembrance of Allah do hearts find rest',
+    footerTagline: 'Seeking the pleasure of Allah, and an aid for steadfast remembrance.',
 
     tabs: {
       home: 'Today',
@@ -425,29 +558,36 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
 
     actions: {
-      markDone: 'Mark as Completed',
+      startSession: 'Start Now',
+      markDone: 'Completed',
       markDoneLate: 'Confirm (Outside Window)',
       snooze: 'Snooze',
       snoozeMinutes: 'Snooze {minutes} min',
-      undo: 'Undo Completion',
+      undo: 'Undo Confirmation',
       save: 'Save Changes',
       cancel: 'Cancel',
       close: 'Close',
       confirm: 'Confirm',
       edit: 'Edit',
+      delete: 'Delete',
       reset: 'Reset Defaults',
       pause: 'Pause Reminders',
       resume: 'Resume Reminders',
+      addTask: 'Add New Task',
       exportData: 'Export Backup',
       importData: 'Import Data',
       checkForUpdates: 'Check for Updates',
       downloadUpdate: 'Download Update',
       restartAndInstall: 'Restart & Install',
       testNotification: 'Send Test Notification',
+      testMiniReminder: 'Test Mini Reminder Window',
       getStarted: 'Get Started',
       next: 'Next',
       back: 'Back',
-      finish: 'Finish Setup'
+      finish: 'Finish Setup',
+      reportIssue: 'Report an Issue',
+      viewLicense: 'License (MIT)',
+      viewRepo: 'GitHub Repository'
     },
 
     status: {
@@ -468,7 +608,12 @@ export const translations: Record<Language, TranslationDictionary> = {
       nextReminder: 'Next Reminder:',
       completedAt: 'Completed at:',
       windowEnded: 'Window ended for this cycle',
-      todayProgress: "Today's Progress"
+      todayProgress: "Today's Progress",
+      defaultDuration: 'Session Duration:',
+      progressLabel: 'Progress:',
+      updateProgress: 'Log Partial Progress',
+      targetReachedConfirm: 'Goal reached! Click to confirm completion',
+      snoozePastWindowWarning: 'Notice: Selected snooze duration exceeds window end ({endTime}). No reminders will be sent after window closes.'
     },
 
     history: {
@@ -477,27 +622,68 @@ export const translations: Record<Language, TranslationDictionary> = {
       last7Days: 'Past 7 Days',
       completedCount: 'Total Completed',
       onTime: 'On Time',
-      late: 'Late',
+      late: 'After Window',
       missed: 'Missed',
-      noHistory: 'No completion history yet. Your accomplishments will appear here as you read.'
+      noHistory: 'No completion history yet. Your accomplishments will appear here as you read.',
+      hideHistoryOption: 'Hide weekly history from home dashboard'
     },
 
-    onboarding: {
-      welcomeTitle: 'Welcome to Wird',
-      welcomeSubtitle: 'A calm, standalone desktop app designed to help you maintain morning & evening remembrance and your daily Quran wird while busy working.',
-      step1Title: 'Auto-Start',
-      step1Desc: 'To ensure you never miss your wird, we recommend launching Wird silently on Windows startup.',
-      autoStartLabel: 'Launch Wird automatically when Windows starts',
-      autoStartDesc: 'Runs quietly in the System Tray with zero background lag or bloat.',
-      step2Title: 'Configure Default Tasks',
-      step2Desc: 'Review suggested windows; you can adjust start and end times to fit your daily schedule.',
-      step3Title: 'Intervals & Reminders',
-      step3Desc: 'Wird will repeat gentle reminders until you confirm or the cycle window ends.',
-      step4Title: 'Appearance & Notifications',
-      step4Desc: 'Select your preferred theme and send a test notification to verify Windows alerts.',
-      testNotificationSuccess: 'Test notification sent! If not visible, please check Windows Notification settings.',
-      readyTitle: "You're All Set!",
-      readyDesc: 'Wird will accompany you quietly. You can always access it from the taskbar tray near the clock.'
+    session: {
+      title: 'Focus Session',
+      subtitle: 'A quiet, distraction-free space for your wird',
+      startTitle: 'Start Focus Session',
+      durationLabel: 'Session Duration (Minutes):',
+      minutesUnit: 'min',
+      timeRemaining: 'Time Remaining',
+      alwaysOnTop: 'Keep window always on top',
+      toggleSeconds: 'Toggle seconds display',
+      earlyExitButton: 'End Session Early',
+      earlyExitHint: 'Press and hold to exit',
+      earlyExitConfirmTitle: 'Are you sure you want to exit early?',
+      earlyExitConfirmDesc: 'Exiting early will not mark the task as completed and normal schedule will resume.',
+      pausedDueToLockTitle: 'Session Paused',
+      pausedDueToLockDesc: 'Timer was paused due to screen lock or system sleep. Sleep time is not counted as reading time.',
+      resumeButton: 'Resume Session Now',
+      crashRecoveryTitle: 'Resume Prior Session',
+      crashRecoveryDesc: 'An unfinished focus session was recovered from before the app closed. Would you like to resume remaining time?',
+      timerFinishedQuestion: 'Did you finish reading?',
+      yesCompleted: 'Yes, Completed',
+      needMoreTime: 'Need More Time',
+      finishWithoutConfirm: 'Finish Without Confirming',
+      extendSelectTitle: 'Select additional extension duration:',
+      postSessionSummaryTitle: 'Session Finished',
+      postSessionSummaryDesc: 'You have {count} other tasks currently due.'
+    },
+
+    miniReminder: {
+      dueTitle: 'Wird Reminder',
+      dueSummary: 'You have {count} tasks due now',
+      dismiss: 'Dismiss',
+      enableLabel: 'Enable Floating Mini Reminder Window',
+      enableDesc: 'A gentle non-intrusive floating window that never steals keyboard focus while you type.',
+      positionLabel: 'Screen Position',
+      positions: {
+        bottomRight: 'Bottom Right',
+        topRight: 'Top Right',
+        bottomLeft: 'Bottom Left',
+        topLeft: 'Top Left'
+      }
+    },
+
+    customTask: {
+      createTitle: 'Create Custom Task',
+      editTitle: 'Edit Task',
+      nameLabel: 'Task Name',
+      startLabel: 'Window Start',
+      endLabel: 'Window End',
+      intervalLabel: 'Repeat Interval (Minutes)',
+      durationLabel: 'Default Focus Duration (Minutes)',
+      targetToggle: 'Set optional numeric goal',
+      targetAmount: 'Target Goal',
+      targetUnit: 'Unit',
+      unitPlaceholder: 'e.g. pages, page, parts',
+      deleteConfirmTitle: 'Confirm Delete Task',
+      deleteConfirmDesc: 'Are you sure you want to delete this custom task and its history?'
     },
 
     settings: {
@@ -558,7 +744,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetDefaultsLabel: 'Reset to Defaults',
       resetDefaultsDesc: 'Reset task windows and settings to defaults while preserving completion logs.',
       resetConfirmTitle: 'Confirm Reset',
-      resetConfirmDesc: 'Are you sure you want to reset tasks and settings to default?'
+      resetConfirmDesc: 'Are you sure you want to reset tasks and settings to default?',
+      diagnosticsTitle: 'Alert Diagnostics & System Settings',
+      dndHelp: 'If alerts do not appear, ensure notifications for "Wird" are enabled in Windows Settings, and check that Focus Assist / Do Not Disturb is off.'
     },
 
     tray: {
@@ -582,9 +770,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       testTitle: 'Wird | Test Alert',
       testBody: 'This is a test notification from Wird. Alert system is active.',
       dueSingleTitle: 'Due: {taskName}',
-      dueSingleBody: 'Reminder for {taskName}. Click to confirm or snooze.',
+      dueSingleBody: 'Reminder for {taskName}. Click to start or confirm.',
       dueMultipleTitle: 'Due Tasks in Wird',
       dueMultipleBody: 'You have {count} tasks due now: {taskNames}',
+      actionStart: 'Start Now',
       actionDone: 'Completed',
       actionSnooze: 'Snooze 15m',
       actionOpen: 'Open App',
@@ -592,26 +781,33 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
 
     about: {
-      title: 'About Wird',
-      version: 'Version',
-      description: 'Wird is a lightweight, open-source desktop app built with modern web and desktop technologies to help Muslims maintain their morning and evening remembrance and daily Quran portion without clutter, tracking, or distractions.',
-      author: 'Wird Team & Open Source Contributors',
-      license: 'MIT Open Source License',
-      githubRepo: 'GitHub Repository',
-      roadmapTitle: 'Future Roadmap',
-      roadmapItems: [
-        'Customizable user-defined tasks and habits.',
-        'Optional always-on-top Mini Quick Action widget.',
-        'Smart Focus Mode to quiet reminders during important meetings.',
-        'Weekly reflection summaries and optional streak statistics.',
-        'Global keyboard shortcuts for instant confirmation.'
-      ],
-      principlesTitle: 'Core Principles',
-      principles: [
-        'Offline-First: Completely private, no servers, no analytics, no tracking.',
-        'Calm & Respectful: Gentle reminders without guilt-tripping or notification fatigue.',
-        'Resource-Efficient: Lightweight and quiet in the background.'
-      ]
+      title: 'About App',
+      version: 'Version:',
+      exactDescription: `Wird
+
+A free and open-source desktop application that helps you maintain morning and evening remembrance and your daily Quran wird with consistent reminders and simple progress tracking.
+
+Created seeking the pleasure of Allah, free of ads or subscriptions, and without collecting your personal data. Your data is stored locally on your device, and reminders work without an internet connection.
+
+We ask Allah to make it beneficial, and to aid us and you in His remembrance, gratitude, and good worship.`,
+      privacyNote: 'Privacy & Connectivity: The app operates entirely offline. The only network call is periodically checking for and downloading updates from the official GitHub Releases repository when enabled.',
+      footerNote: 'Seeking the pleasure of Allah, and an aid for steadfast remembrance.'
+    },
+
+    onboarding: {
+      welcomeTitle: 'Welcome to Wird',
+      readyTitle: 'Wird setup is complete!',
+      testNotificationSuccess: 'Test notification sent successfully!',
+      step1Title: 'Auto-Start with System',
+      step1Desc: 'Would you like Wird to start automatically when signing in to Windows?',
+      autoStartLabel: 'Launch Wird automatically on Windows startup',
+      autoStartDesc: 'Ensures you never miss reminders without needing manual launch.',
+      step2Title: 'Daily Tasks Schedule',
+      step2Desc: 'Adjust the window periods for your morning, evening adhkar, and wird:',
+      step3Title: 'Notification Test',
+      step3Desc: 'Test notifications and chimes to verify delivery on Windows:',
+      step4Title: 'Appearance & Theme',
+      step4Desc: 'Choose your preferred visual theme for comfortable viewing:'
     },
 
     days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

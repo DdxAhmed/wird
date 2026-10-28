@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import {
   AppSettings,
+  FocusSession,
   ImportValidationResult,
   SystemStatus,
   TaskDefinition,
@@ -24,9 +25,12 @@ interface AppContextType {
   // Actions
   completeTask: (occurrenceId: string, taskId: string, cycleDate: string, completedLate?: boolean) => Promise<void>
   undoCompleteTask: (occurrenceId: string) => Promise<void>
+  updateProgress: (occurrenceId: string, current: number, total?: number, unit?: string) => Promise<void>
   snoozeTask: (occurrenceId: string, minutes: number) => Promise<void>
   updateSettings: (partial: Partial<AppSettings>) => Promise<void>
   updateTask: (taskId: string, partial: Partial<TaskDefinition>) => Promise<void>
+  addTask: (task: Omit<TaskDefinition, 'id' | 'isDefault'>) => Promise<void>
+  deleteTask: (taskId: string) => Promise<void>
   resetTasks: () => Promise<void>
   pauseReminders: (minutes: number) => Promise<void>
   resumeReminders: () => Promise<void>
@@ -34,10 +38,21 @@ interface AppContextType {
   validateImport: (jsonString: string) => Promise<ImportValidationResult>
   importData: (jsonString: string) => Promise<boolean>
   testNotification: () => Promise<void>
+  testMiniReminder: () => Promise<void>
   checkForUpdates: () => Promise<void>
   downloadUpdate: () => Promise<void>
   installUpdate: () => Promise<void>
   openExternalUrl: (url: string) => Promise<void>
+
+  // Focus Session
+  startSession: (taskId: string, occurrenceId: string, durationMinutes: number) => Promise<void>
+  pauseSession: () => Promise<void>
+  resumeSession: () => Promise<void>
+  extendSession: (minutes: number) => Promise<void>
+  confirmSession: () => Promise<void>
+  abandonSession: () => Promise<void>
+  toggleSessionAlwaysOnTop: () => Promise<void>
+  toggleSessionSeconds: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -159,6 +174,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setStoreData(updated)
   }
 
+  const updateProgress = async (
+    occurrenceId: string,
+    current: number,
+    total?: number,
+    unit?: string
+  ) => {
+    if (!window.wirdApi) return
+    const updated = await window.wirdApi.updateProgress(occurrenceId, current, total, unit)
+    setStoreData(updated)
+  }
+
   const snoozeTask = async (occurrenceId: string, minutes: number) => {
     if (!window.wirdApi) return
     const updated = await window.wirdApi.snoozeTask(occurrenceId, minutes)
@@ -174,6 +200,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateTask = async (taskId: string, partial: Partial<TaskDefinition>) => {
     if (!window.wirdApi) return
     const updated = await window.wirdApi.updateTask(taskId, partial)
+    setStoreData(updated)
+  }
+
+  const addTask = async (task: Omit<TaskDefinition, 'id' | 'isDefault'>) => {
+    if (!window.wirdApi) return
+    const updated = await window.wirdApi.addTask(task)
+    setStoreData(updated)
+  }
+
+  const deleteTask = async (taskId: string) => {
+    if (!window.wirdApi) return
+    const updated = await window.wirdApi.deleteTask(taskId)
     setStoreData(updated)
   }
 
@@ -220,6 +258,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await window.wirdApi.testNotification()
   }
 
+  const testMiniReminder = async () => {
+    if (!window.wirdApi) return
+    await window.wirdApi.testMiniReminder()
+  }
+
   const checkForUpdates = async () => {
     if (!window.wirdApi) return
     const status = await window.wirdApi.checkForUpdates()
@@ -241,6 +284,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await window.wirdApi.openExternalUrl(url)
   }
 
+  // Session
+  const startSession = async (taskId: string, occurrenceId: string, durationMinutes: number) => {
+    if (!window.wirdApi) return
+    await window.wirdApi.startSession(taskId, occurrenceId, durationMinutes)
+  }
+
+  const pauseSession = async () => {
+    if (!window.wirdApi) return
+    await window.wirdApi.pauseSession()
+  }
+
+  const resumeSession = async () => {
+    if (!window.wirdApi) return
+    await window.wirdApi.resumeSession()
+  }
+
+  const extendSession = async (minutes: number) => {
+    if (!window.wirdApi) return
+    await window.wirdApi.extendSession(minutes)
+  }
+
+  const confirmSession = async () => {
+    if (!window.wirdApi) return
+    await window.wirdApi.confirmSession()
+  }
+
+  const abandonSession = async () => {
+    if (!window.wirdApi) return
+    await window.wirdApi.abandonSession()
+  }
+
+  const toggleSessionAlwaysOnTop = async () => {
+    if (!window.wirdApi) return
+    await window.wirdApi.toggleSessionAlwaysOnTop()
+  }
+
+  const toggleSessionSeconds = async () => {
+    if (!window.wirdApi) return
+    await window.wirdApi.toggleSessionSeconds()
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -257,9 +341,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hideToast,
         completeTask,
         undoCompleteTask,
+        updateProgress,
         snoozeTask,
         updateSettings,
         updateTask,
+        addTask,
+        deleteTask,
         resetTasks,
         pauseReminders,
         resumeReminders,
@@ -267,10 +354,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         validateImport,
         importData,
         testNotification,
+        testMiniReminder,
         checkForUpdates,
         downloadUpdate,
         installUpdate,
-        openExternalUrl
+        openExternalUrl,
+        startSession,
+        pauseSession,
+        resumeSession,
+        extendSession,
+        confirmSession,
+        abandonSession,
+        toggleSessionAlwaysOnTop,
+        toggleSessionSeconds
       }}
     >
       {children}

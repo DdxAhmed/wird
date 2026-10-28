@@ -3,15 +3,40 @@ import { formatLocalDate } from '@shared/scheduler'
 import { translations } from '@shared/i18n'
 import { Language, TaskDefinition } from '@shared/types'
 import { useApp } from '../context/AppContext'
-import { Award, CheckCircle2, Clock, Calendar, Check } from 'lucide-react'
+import { Award, Calendar, Check, EyeOff, Sparkles } from 'lucide-react'
 
 export const WeeklyHistory: React.FC = () => {
-  const { storeData } = useApp()
+  const { storeData, setActiveTab } = useApp()
 
   if (!storeData) return null
 
   const lang = (storeData.settings.language || 'ar') as Language
   const t = translations[lang] || translations.ar
+
+  // Respect user preference to hide weekly history
+  if (storeData.settings.hideWeeklyHistory) {
+    return (
+      <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-4 max-w-md mx-auto my-12 animate-fade-in font-sans">
+        <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+          <EyeOff className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+            سجل الإنجاز مخفي
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            تم إخفاء عرض السجل الأسبوعي وفق رغبتك ليكون الورد خالصًا دون انشغال بالأرقام.
+          </p>
+        </div>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs text-slate-700 dark:text-slate-300 font-medium transition-colors"
+        >
+          تعديل الإعدادات
+        </button>
+      </div>
+    )
+  }
 
   // Compute last 7 days
   const historyDays = useMemo(() => {
@@ -90,7 +115,7 @@ export const WeeklyHistory: React.FC = () => {
   }, [historyDays])
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in font-sans">
       {/* Top Banner */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

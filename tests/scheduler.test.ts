@@ -38,7 +38,8 @@ describe('Scheduler & Task Occurrence Logic', () => {
     startTime: '05:30',
     endTime: '11:00',
     repeatIntervalMinutes: 15,
-    snoozeDurationMinutes: 15
+    snoozeDurationMinutes: 15,
+    defaultFocusDurationMinutes: 15
   }
 
   const sampleOvernightTask: TaskDefinition = {
@@ -49,13 +50,14 @@ describe('Scheduler & Task Occurrence Logic', () => {
     startTime: '22:00',
     endTime: '02:00',
     repeatIntervalMinutes: 20,
-    snoozeDurationMinutes: 15
+    snoozeDurationMinutes: 15,
+    defaultFocusDurationMinutes: 20
   }
 
   const createEmptyStore = (): WirdStoreData => ({
-    schemaVersion: 1,
+    schemaVersion: 2,
     settings: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       theme: 'system',
       language: 'ar',
       autoStartOnBoot: true,
@@ -65,12 +67,20 @@ describe('Scheduler & Task Occurrence Logic', () => {
       pausedUntil: null,
       autoCheckUpdates: true,
       updateChannel: 'stable',
-      lastUpdateCheck: null
+      lastUpdateCheck: null,
+      miniReminderEnabled: true,
+      miniReminderPosition: 'bottom-right',
+      hideWeeklyHistory: false,
+      githubRepoUrl: 'https://github.com/wird-app/wird',
+      issuesUrl: 'https://github.com/wird-app/wird/issues',
+      licenseUrl: 'https://github.com/wird-app/wird/blob/main/LICENSE'
     },
     tasks: [sampleMorningTask, sampleOvernightTask],
     completions: {},
+    progress: {},
     snoozes: {},
-    lastNotified: {}
+    lastNotified: {},
+    activeSession: null
   })
 
   it('correctly parses 24h time strings', () => {
@@ -310,3 +320,4 @@ describe('Scheduler & Task Occurrence Logic', () => {
     })
   })
 })
+

@@ -1,19 +1,45 @@
 import { CURRENT_SCHEMA_VERSION, DEFAULT_SETTINGS, DEFAULT_TASKS } from './constants'
-import { ImportValidationResult, TaskDefinition, WirdStoreData } from './types'
+import { ImportValidationResult, TaskDefinition, TaskTarget, WirdStoreData } from './types'
 
 export type MigrationFn = (oldData: Record<string, unknown>) => Record<string, unknown>
 
-/**
- * Registry of schema migrations.
- * Each migration transforms data from version N to version N + 1.
- */
 export const migrations: Record<number, MigrationFn> = {
-  // Example future migration:
-  // 1: (data) => {
-  //   data.schemaVersion = 2
-  //   // transform fields...
-  //   return data
-  // }
+  // Migration from v1 to v2: Focus session, targets, custom tasks, mini reminder settings
+  1: (data) => {
+    const rawSettings = (data.settings as Record<string, unknown>) || {}
+    data.settings = {
+      ...DEFAULT_SETTINGS,
+      ...rawSettings,
+      miniReminderEnabled: rawSettings.miniReminderEnabled ?? true,
+      miniReminderPosition: rawSettings.miniReminderPosition ?? 'bottom-right',
+      hideWeeklyHistory: rawSettings.hideWeeklyHistory ?? false,
+      githubRepoUrl: DEFAULT_SETTINGS.githubRepoUrl,
+      issuesUrl: DEFAULT_SETTINGS.issuesUrl,
+      licenseUrl: DEFAULT_SETTINGS.licenseUrl,
+      schemaVersion: 2
+    }
+
+    if (!data.progress || typeof data.progress !== 'object') {
+      data.progress = {}
+    }
+    if (data.activeSession === undefined) {
+      data.activeSession = null
+    }
+
+    // Update tasks with default focus duration if missing
+    if (Array.isArray(data.tasks)) {
+      data.tasks = data.tasks.map((task: unknown) => {
+        const t = task as Record<string, unknown>
+        return {
+          ...t,
+          defaultFocusDurationMinutes: typeof t.defaultFocusDurationMinutes === 'number' ? t.defaultFocusDurationMinutes : 15
+        }
+      })
+    }
+
+    data.schemaVersion = 2
+    return data
+  }
 }
 
 /**
@@ -42,10 +68,25 @@ export function validateAndSanitizeTask(task: unknown): TaskDefinition | null {
       ? Math.round(t.snoozeDurationMinutes)
       : 15
 
+  const defaultFocusDurationMinutes =
+    typeof t.defaultFocusDurationMinutes === 'number' && t.defaultFocusDurationMinutes > 0
+      ? Math.min(180, Math.max(1, Math.round(t.defaultFocusDurationMinutes)))
+      : 15
+
   const daysOfWeek =
     Array.isArray(t.daysOfWeek) && t.daysOfWeek.every((d) => typeof d === 'number' && d >= 0 && d <= 6)
       ? t.daysOfWeek
       : [0, 1, 2, 3, 4, 5, 6]
+
+  let target: TaskTarget | undefined
+  if (t.target && typeof t.target === 'object') {
+    const rawTarget = t.target as Record<string, unknown>
+    target = {
+      enabled: Boolean(rawTarget.enabled),
+      total: typeof rawTarget.total === 'number' && rawTarget.total > 0 ? Math.round(rawTarget.total) : 10,
+      unit: typeof rawTarget.unit === 'string' && rawTarget.unit.trim() ? rawTarget.unit.trim() : 'صفحات'
+    }
+  }
 
   return {
     id: t.id,
@@ -65,7 +106,10 @@ export function validateAndSanitizeTask(task: unknown): TaskDefinition | null {
     startTime,
     endTime,
     repeatIntervalMinutes,
-    snoozeDurationMinutes
+    snoozeDurationMinutes,
+    defaultFocusDurationMinutes,
+    isCustom: Boolean(t.isCustom),
+    target
   }
 }
 
@@ -85,8 +129,10 @@ export function migrateStoreData(raw: unknown): {
         settings: { ...DEFAULT_SETTINGS },
         tasks: [...DEFAULT_TASKS],
         completions: {},
+        progress: {},
         snoozes: {},
-        lastNotified: {}
+        lastNotified: {},
+        activeSession: null
       },
       migrated: true,
       fromVersion: 0,
@@ -105,7 +151,6 @@ export function migrateStoreData(raw: unknown): {
       currentData = migration(currentData)
       currentVersion++
     } else {
-      // Direct jump to current version if no intermediate migration needed
       currentVersion = CURRENT_SCHEMA_VERSION
       currentData.schemaVersion = CURRENT_SCHEMA_VERSION
       break
@@ -121,7 +166,6 @@ export function migrateStoreData(raw: unknown): {
     if (valid) sanitizedTasks.push(valid)
   }
 
-  // Ensure default tasks exist if list was empty or corrupted
   if (sanitizedTasks.length === 0) {
     sanitizedTasks.push(...DEFAULT_TASKS)
   }
@@ -138,6 +182,11 @@ export function migrateStoreData(raw: unknown): {
       ? (currentData.completions as WirdStoreData['completions'])
       : {}
 
+  const progress =
+    currentData.progress && typeof currentData.progress === 'object'
+      ? (currentData.progress as WirdStoreData['progress'])
+      : {}
+
   const snoozes =
     currentData.snoozes && typeof currentData.snoozes === 'object'
       ? (currentData.snoozes as WirdStoreData['snoozes'])
@@ -148,13 +197,20 @@ export function migrateStoreData(raw: unknown): {
       ? (currentData.lastNotified as WirdStoreData['lastNotified'])
       : {}
 
+  const activeSession =
+    currentData.activeSession && typeof currentData.activeSession === 'object'
+      ? (currentData.activeSession as WirdStoreData['activeSession'])
+      : null
+
   const finalData: WirdStoreData = {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     settings,
     tasks: sanitizedTasks,
     completions,
+    progress,
     snoozes,
-    lastNotified
+    lastNotified,
+    activeSession
   }
 
   return {
@@ -175,7 +231,7 @@ export function validateImportJson(rawContent: string): ImportValidationResult {
       return { valid: false, error: 'الملف لا يحتوي على كائن JSON صالح | JSON must be a valid object' }
     }
 
-    const payload = parsed.data || parsed // Support both { data: {...} } and direct {...}
+    const payload = parsed.data || parsed
 
     if (!payload.tasks || !Array.isArray(payload.tasks)) {
       return { valid: false, error: 'الملف لا يحتوي على قائمة مهام صالحة | Missing or invalid tasks array' }
@@ -186,9 +242,10 @@ export function validateImportJson(rawContent: string): ImportValidationResult {
       return { valid: false, error: 'لم يتم العثور على أي مهمة صالحة في الملف | No valid tasks found in import' }
     }
 
-    const completionCount = payload.completions && typeof payload.completions === 'object'
-      ? Object.keys(payload.completions).length
-      : 0
+    const completionCount =
+      payload.completions && typeof payload.completions === 'object'
+        ? Object.keys(payload.completions).length
+        : 0
 
     return {
       valid: true,

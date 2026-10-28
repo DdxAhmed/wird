@@ -1,12 +1,14 @@
 import { powerMonitor } from 'electron'
 import { getDueTasksForNotification, getTaskOccurrence } from '../shared/scheduler'
-import { TaskOccurrenceInfo, WirdStoreData } from '../shared/types'
+import { TaskOccurrenceInfo } from '../shared/types'
+import { MiniReminderManager } from './miniReminderManager'
 import { NotificationManager } from './notificationManager'
 import { StoreManager } from './store'
 
 export class SchedulerManager {
   private store: StoreManager
   private notifications: NotificationManager
+  private miniReminderManager?: MiniReminderManager
   private timer: NodeJS.Timeout | null = null
   private onOpenAppCallback?: (taskId?: string) => void
   private lastEvaluationTime: number = Date.now()
@@ -14,11 +16,13 @@ export class SchedulerManager {
   constructor(
     store: StoreManager,
     notifications: NotificationManager,
-    onOpenApp: (taskId?: string) => void
+    onOpenApp: (taskId?: string) => void,
+    miniReminderManager?: MiniReminderManager
   ) {
     this.store = store
     this.notifications = notifications
     this.onOpenAppCallback = onOpenApp
+    this.miniReminderManager = miniReminderManager
 
     this.registerPowerMonitor()
   }
@@ -70,11 +74,16 @@ export class SchedulerManager {
   public async evaluateSchedule(isWakeup = false): Promise<TaskOccurrenceInfo[]> {
     const data = this.store.getData()
 
+    // Central coordination: If in active or paused focus session, suppress reminders
+    if (data.activeSession && (data.activeSession.status === 'active' || data.activeSession.status === 'paused')) {
+      return this.getAllTaskOccurrences()
+    }
+
     // 1. Get due tasks that should trigger notification
     const dueTasks = getDueTasksForNotification(data)
 
     if (dueTasks.length > 0) {
-      // Dispatch notification
+      // Dispatch Windows notification
       this.notifications.notifyDueTasks(
         dueTasks,
         data,
@@ -93,6 +102,11 @@ export class SchedulerManager {
           await this.store.snoozeTask(occurrenceId, minutes)
         }
       )
+
+      // Show mini reminder window if enabled in settings
+      if (this.miniReminderManager) {
+        this.miniReminderManager.showDueReminder(dueTasks)
+      }
 
       // Record last notified timestamps so we don't repeat until repeat interval elapses
       for (const due of dueTasks) {

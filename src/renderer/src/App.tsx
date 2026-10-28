@@ -1,7 +1,10 @@
 import React from 'react'
-import { TaskDefinition } from '@shared/types'
+import { translations } from '@shared/i18n'
+import { Language, TaskDefinition } from '@shared/types'
 import { AboutModal } from './components/AboutModal'
+import { FocusSessionOverlay } from './components/FocusSessionOverlay'
 import { Header } from './components/Header'
+import { MiniReminderView } from './components/MiniReminderView'
 import { OnboardingModal } from './components/OnboardingModal'
 import { SettingsView } from './components/SettingsView'
 import { TaskCard } from './components/TaskCard'
@@ -13,9 +16,14 @@ import { useApp } from './context/AppContext'
 export const App: React.FC = () => {
   const { storeData, loading, activeTab, highlightedTaskId } = useApp()
 
+  // If this window instance was opened with hash #mini-reminder, render MiniReminderView directly
+  if (window.location.hash === '#mini-reminder') {
+    return <MiniReminderView />
+  }
+
   if (loading || !storeData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white font-bold text-2xl flex items-center justify-center animate-pulse shadow-xl shadow-emerald-600/30">
             و
@@ -28,10 +36,12 @@ export const App: React.FC = () => {
     )
   }
 
+  const lang = (storeData.settings.language || 'ar') as Language
+  const t = translations[lang] || translations.ar
   const showOnboarding = !storeData.settings.hasCompletedOnboarding
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-emerald-500 selection:text-white font-sans antialiased">
       {/* Header */}
       <Header />
 
@@ -58,12 +68,23 @@ export const App: React.FC = () => {
         {activeTab === 'about' && <AboutModal />}
       </main>
 
+      {/* Footer Tagline */}
+      <footer className="py-6 border-t border-slate-200/80 dark:border-slate-800/80 text-center">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          {t.footerTagline}
+        </p>
+      </footer>
+
       {/* First-time Onboarding Modal */}
       {showOnboarding && <OnboardingModal />}
 
       {/* In-app Toast notifications */}
       <Toast />
+
+      {/* Focus Session Fullscreen Overlay («جلسة تفرّغ») */}
+      {storeData.activeSession && <FocusSessionOverlay />}
     </div>
   )
 }
+
 export default App

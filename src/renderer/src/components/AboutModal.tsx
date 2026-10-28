@@ -3,110 +3,129 @@ import { translations } from '@shared/i18n'
 import { Language } from '@shared/types'
 import { useApp } from '../context/AppContext'
 import {
-  CheckCircle,
   ExternalLink,
   Github,
   Heart,
-  Info,
-  Layers,
-  MapPin,
-  ShieldCheck,
-  Sparkles
+  HelpCircle,
+  RefreshCw,
+  Scale,
+  ShieldCheck
 } from 'lucide-react'
 
 export const AboutModal: React.FC = () => {
-  const { storeData, systemStatus, openExternalUrl } = useApp()
+  const { storeData, systemStatus, updateStatus, checkForUpdates, openExternalUrl } = useApp()
 
   if (!storeData) return null
 
   const lang = (storeData.settings.language || 'ar') as Language
   const t = translations[lang] || translations.ar
 
+  const repoUrl = storeData.settings.githubRepoUrl || 'https://github.com/wird-app/wird'
+  const issuesUrl = storeData.settings.issuesUrl || 'https://github.com/wird-app/wird/issues'
+  const licenseUrl = storeData.settings.licenseUrl || 'https://github.com/wird-app/wird/blob/main/LICENSE'
+
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
-      {/* Hero Header */}
-      <div className="p-8 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white relative overflow-hidden shadow-xl shadow-emerald-900/20">
-        <div className="relative z-10 space-y-3 max-w-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-2xl shadow-inner">
-              و
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">{t.appName}</h2>
-              <span className="text-xs text-emerald-100 font-mono">
-                v{systemStatus?.appVersion || '1.0.0'} • MIT License
+    <div className="space-y-6 animate-fade-in pb-12 max-w-3xl mx-auto">
+      {/* Calm Hero Card */}
+      <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center font-bold text-3xl shadow-lg shadow-emerald-600/20">
+            و
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              {t.appName}
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono font-medium border border-emerald-200/50 dark:border-emerald-800/50">
+                {t.about.version} {systemStatus?.appVersion || '1.0.0'}
               </span>
             </div>
           </div>
-
-          <p className="text-sm text-emerald-50 leading-relaxed pt-1">
-            {t.about.description}
-          </p>
-
-          <div className="flex items-center gap-3 pt-3">
-            <button
-              onClick={() => openExternalUrl('https://github.com/wird-app/wird')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold backdrop-blur-md transition-colors"
-            >
-              <Github className="w-4 h-4" />
-              <span>{t.about.githubRepo}</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </button>
-          </div>
         </div>
 
-        {/* Decorative background circle */}
-        <div className="absolute -left-12 -bottom-12 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+        {/* Exact Specified Arabic Text */}
+        <div className="space-y-4 text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line border-t border-slate-100 dark:border-slate-800/80 pt-6">
+          {t.about.exactDescription}
+        </div>
       </div>
 
-      {/* Core Principles */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          <span>{t.about.principlesTitle}</span>
-        </h3>
+      {/* Privacy & Network Connection Notice */}
+      <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span>الخصوصية والاتصال بالشبكة</span>
+        </div>
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          {t.about.privacyNote}
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {t.about.principles.map((principle: string, idx: number) => (
-            <div
-              key={idx}
-              className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 leading-relaxed"
-            >
-              {principle}
+      {/* Links & Actions Section */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Check Updates Button */}
+          <button
+            onClick={() => checkForUpdates()}
+            disabled={updateStatus.state === 'checking'}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 transition-colors text-xs font-medium text-slate-800 dark:text-slate-200 group"
+          >
+            <div className="flex items-center gap-2.5">
+              <RefreshCw
+                className={`w-4 h-4 text-emerald-600 dark:text-emerald-400 ${
+                  updateStatus.state === 'checking' ? 'animate-spin' : ''
+                }`}
+              />
+              <span>{t.actions.checkForUpdates}</span>
             </div>
-          ))}
-        </div>
-      </div>
+            <span className="text-[11px] text-slate-400">
+              {updateStatus.state === 'checking' ? t.settings.checkingUpdates : ''}
+            </span>
+          </button>
 
-      {/* Future Roadmap */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-500" />
-          <span>{t.about.roadmapTitle}</span>
-        </h3>
-
-        <div className="space-y-2.5">
-          {t.about.roadmapItems.map((item: string, idx: number) => (
-            <div
-              key={idx}
-              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-xs text-slate-700 dark:text-slate-300"
-            >
-              <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-              <span>{item}</span>
+          {/* GitHub Repo */}
+          <button
+            onClick={() => openExternalUrl(repoUrl)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 transition-colors text-xs font-medium text-slate-800 dark:text-slate-200"
+          >
+            <div className="flex items-center gap-2.5">
+              <Github className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+              <span>{t.actions.viewRepo}</span>
             </div>
-          ))}
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+
+          {/* Report Issue */}
+          <button
+            onClick={() => openExternalUrl(issuesUrl)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 transition-colors text-xs font-medium text-slate-800 dark:text-slate-200"
+          >
+            <div className="flex items-center gap-2.5">
+              <HelpCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>{t.actions.reportIssue}</span>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+
+          {/* License */}
+          <button
+            onClick={() => openExternalUrl(licenseUrl)}
+            className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 transition-colors text-xs font-medium text-slate-800 dark:text-slate-200"
+          >
+            <div className="flex items-center gap-2.5">
+              <Scale className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span>{t.actions.viewLicense}</span>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+          </button>
         </div>
       </div>
 
-      {/* Open Source & Credits */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-        <div className="flex items-center gap-2">
-          <Heart className="w-4 h-4 text-rose-500" />
-          <span>مبني بحب وإتقان لخدمة كل مسلم ومسلمة. مفتوح المصدر لوجه الله تعالى.</span>
-        </div>
-        <div className="text-[11px] text-slate-400 font-mono">
-          Electron • React • TypeScript • Vite
-        </div>
+      {/* Calm Footer Banner */}
+      <div className="text-center py-6">
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+          {t.footerTagline}
+        </p>
       </div>
     </div>
   )

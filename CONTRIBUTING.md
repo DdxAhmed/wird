@@ -94,3 +94,4 @@
 2. يتم توثيق التغييرات في `CHANGELOG.md`.
 3. يتم دفع Git Tag بصيغة `vX.Y.Z` (مثال: `git tag v1.0.0 && git push origin v1.0.0`).
 4. يقوم سير عمل GitHub Actions ببناء حزمة التثبيت لنظام Windows (NSIS)، توقيعها رقميًا (عند توفر الأسرار)، ونشر الـ Release وإرفاق ملفات `latest.yml` ومثبّت التطبيق تلقائيًا.
+

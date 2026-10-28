@@ -83,3 +83,4 @@ jobs:
             dist/Wird-Setup-*.exe
             dist/latest.yml
             dist/*.blockmap
+

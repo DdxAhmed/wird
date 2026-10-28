@@ -5,8 +5,10 @@ import { APP_ID, APP_NAME, IPC_CHANNELS } from '../shared/constants'
 import { translations } from '../shared/i18n'
 import { AutoUpdateManager } from './autoUpdater'
 import { setupIpcHandlers } from './ipcHandlers'
+import { MiniReminderManager } from './miniReminderManager'
 import { NotificationManager } from './notificationManager'
 import { SchedulerManager } from './schedulerManager'
+import { SessionManager } from './sessionManager'
 import { StoreManager } from './store'
 
 const currentDir = typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url))
@@ -24,6 +26,8 @@ let isQuitting = false
 
 const store = new StoreManager()
 const notifications = new NotificationManager()
+let sessionManager: SessionManager
+let miniReminderManager: MiniReminderManager
 let scheduler: SchedulerManager
 let autoUpdater: AutoUpdateManager
 
@@ -51,6 +55,20 @@ function updateTrayMenu(): void {
     },
     { type: 'separator' }
   ]
+
+  // Active Focus Session info if present
+  if (data.activeSession && (data.activeSession.status === 'active' || data.activeSession.status === 'paused')) {
+    const mins = Math.ceil(data.activeSession.remainingSeconds / 60)
+    menuTemplate.push(
+      {
+        label: `⏳ ${data.activeSession.taskName} (${mins} ${t.session.minutesUnit})`,
+        click: () => {
+          showMainWindow()
+        }
+      },
+      { type: 'separator' }
+    )
+  }
 
   // Due tasks summary
   if (dueTasks.length > 0) {
@@ -273,12 +291,40 @@ app.whenReady().then(async () => {
 
   await store.initialize()
 
-  autoUpdater = new AutoUpdateManager(store)
-  scheduler = new SchedulerManager(store, notifications, (taskId) => {
-    showMainWindow(taskId)
-  })
+  sessionManager = new SessionManager(store, () => mainWindow)
 
-  setupIpcHandlers(store, scheduler, notifications, autoUpdater, () => mainWindow)
+  miniReminderManager = new MiniReminderManager(
+    store,
+    (taskId, occurrenceId, duration) => {
+      const task = store.getData().tasks.find((t) => t.id === taskId)
+      if (task) {
+        sessionManager.startSession(task, occurrenceId, duration).catch(console.error)
+      }
+    },
+    (taskId) => {
+      showMainWindow(taskId)
+    }
+  )
+
+  autoUpdater = new AutoUpdateManager(store)
+  scheduler = new SchedulerManager(
+    store,
+    notifications,
+    (taskId) => {
+      showMainWindow(taskId)
+    },
+    miniReminderManager
+  )
+
+  setupIpcHandlers(
+    store,
+    scheduler,
+    notifications,
+    autoUpdater,
+    sessionManager,
+    miniReminderManager,
+    () => mainWindow
+  )
 
   createWindow()
   createTray()
@@ -321,5 +367,8 @@ app.on('before-quit', () => {
   }
   if (autoUpdater) {
     autoUpdater.stopPeriodicCheck()
+  }
+  if (miniReminderManager) {
+    miniReminderManager.close()
   }
 })
