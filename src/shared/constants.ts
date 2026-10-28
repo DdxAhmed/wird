@@ -1,4 +1,5 @@
 import { AppSettings, TaskDefinition, WirdStoreData } from './types'
+import { DEFAULT_PRAYER_OPTIONS } from './prayer'
 
 export const CURRENT_SCHEMA_VERSION = 2
 
@@ -69,12 +70,24 @@ export const DEFAULT_TASKS: TaskDefinition[] = [
 
 export const DEFAULT_SETTINGS: AppSettings = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
+  userName: '',
   theme: 'system',
   language: 'ar',
   autoStartOnBoot: true,
   startMinimizedToTray: true,
   hasCompletedOnboarding: false,
   soundEnabled: true,
+  prayerLocation: null,
+  prayerOptions: DEFAULT_PRAYER_OPTIONS,
+  prayerAudioFile: null,
+  fajrAudioFile: null,
+  prayerVolume: 0.8,
+  prayerEnabled: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
+  prayerPreAlertMinutes: 0,
+  allowAdhanDuringFocus: true,
+  allowAdhanWhileRemindersPaused: true,
+  locationRefreshHours: 4,
+  automaticLocationConsent: false,
   pausedUntil: null,
   autoCheckUpdates: true,
   updateChannel: 'stable',
@@ -82,9 +95,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   miniReminderEnabled: true,
   miniReminderPosition: 'bottom-right',
   hideWeeklyHistory: false,
-  githubRepoUrl: 'https://github.com/wird-app/wird',
-  issuesUrl: 'https://github.com/wird-app/wird/issues',
-  licenseUrl: 'https://github.com/wird-app/wird/blob/main/LICENSE'
+  githubRepoUrl: 'https://github.com/DdxAhmed/wird',
+  issuesUrl: 'https://github.com/DdxAhmed/wird/issues',
+  licenseUrl: 'https://github.com/DdxAhmed/wird/blob/main/LICENSE'
 }
 
 export const INITIAL_STORE_DATA: WirdStoreData = {
@@ -95,12 +108,17 @@ export const INITIAL_STORE_DATA: WirdStoreData = {
   progress: {},
   snoozes: {},
   lastNotified: {},
+  prayerEvents: {},
   activeSession: null
 }
 
 export const IPC_CHANNELS = {
   // Store & Data
   GET_STORE_DATA: 'wird:get-store-data',
+  GET_PRAYER_TIMES: 'wird:get-prayer-times',
+  PICK_PRAYER_AUDIO: 'wird:pick-prayer-audio',
+  PREVIEW_PRAYER_AUDIO: 'wird:preview-prayer-audio',
+  STOP_PRAYER_AUDIO: 'wird:stop-prayer-audio',
   UPDATE_SETTINGS: 'wird:update-settings',
   UPDATE_TASK: 'wird:update-task',
   ADD_TASK: 'wird:add-task',
@@ -133,6 +151,7 @@ export const IPC_CHANNELS = {
   TEST_NOTIFICATION: 'wird:test-notification',
   TEST_MINI_REMINDER: 'wird:test-mini-reminder',
   MINIMIZE_WINDOW: 'wird:minimize-window',
+  TOGGLE_MAXIMIZE_WINDOW: 'wird:toggle-maximize-window',
   CLOSE_WINDOW: 'wird:close-window',
   QUIT_APP: 'wird:quit-app',
   OPEN_EXTERNAL_URL: 'wird:open-external-url',

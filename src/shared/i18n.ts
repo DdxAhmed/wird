@@ -255,7 +255,6 @@ export interface TranslationDictionary {
     footerNote: string
   }
 
-  // Onboarding
   onboarding: {
     welcomeTitle: string
     readyTitle: string

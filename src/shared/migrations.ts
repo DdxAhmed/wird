@@ -132,6 +132,7 @@ export function migrateStoreData(raw: unknown): {
         progress: {},
         snoozes: {},
         lastNotified: {},
+        prayerEvents: {},
         activeSession: null
       },
       migrated: true,
@@ -210,6 +211,8 @@ export function migrateStoreData(raw: unknown): {
     progress,
     snoozes,
     lastNotified,
+    prayerEvents: currentData.prayerEvents && typeof currentData.prayerEvents === 'object'
+      ? currentData.prayerEvents as WirdStoreData['prayerEvents'] : {},
     activeSession
   }
 

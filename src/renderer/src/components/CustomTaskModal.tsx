@@ -79,7 +79,7 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ taskToEdit, on
   }
 
   const handleDelete = async () => {
-    if (!taskToEdit || taskToEdit.isDefault) return
+    if (!taskToEdit || !taskToEdit.isCustom) return
     const confirm = window.confirm('هل أنت متأكد من حذف هذه المهمة؟')
     if (confirm) {
       await deleteTask(taskToEdit.id)
@@ -261,7 +261,7 @@ export const CustomTaskModal: React.FC<CustomTaskModalProps> = ({ taskToEdit, on
 
           {/* Action buttons */}
           <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            {taskToEdit && !taskToEdit.isDefault ? (
+            {taskToEdit && taskToEdit.isCustom ? (
               <button
                 type="button"
                 onClick={handleDelete}

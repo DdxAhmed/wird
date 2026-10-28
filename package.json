@@ -1,13 +1,13 @@
 {
   "name": "wird",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "تطبيق مكتبي هادئ ومفتوح المصدر لتذكير المسلم بأذكار الصباح والمساء والورد اليومي | Calm desktop reminder for morning & evening adhkar and daily wird",
   "main": "./out/main/index.js",
   "author": "Wird Team",
-  "homepage": "https://github.com/wird-app/wird",
+  "homepage": "https://github.com/DdxAhmed/wird",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wird-app/wird.git"
+    "url": "https://github.com/DdxAhmed/wird.git"
   },
   "license": "MIT",
   "scripts": {
@@ -50,6 +50,12 @@
     },
     "nsis": {
       "oneClick": false,
+      "include": "resources/installer.nsh",
+      "installerIcon": "resources/icon.ico",
+      "uninstallerIcon": "resources/icon.ico",
+      "installerHeader": "resources/installerHeader.bmp",
+      "installerSidebar": "resources/installerSidebar.bmp",
+      "uninstallerSidebar": "resources/installerSidebar.bmp",
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
@@ -59,7 +65,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "wird-app",
+      "owner": "DdxAhmed",
       "repo": "wird"
     }
   },

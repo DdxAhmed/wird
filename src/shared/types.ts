@@ -1,6 +1,7 @@
 export type Language = 'ar' | 'en'
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type UpdateChannel = 'stable' | 'beta'
+import type { PrayerLocation, PrayerOptions } from './prayer'
 
 export type TaskStatus = 'upcoming' | 'due' | 'snoozed' | 'completed' | 'expired'
 
@@ -27,7 +28,6 @@ export interface TaskDefinition {
   snoozeDurationMinutes: number // default: 15 min
   defaultFocusDurationMinutes: number // default: 15 min
   isCustom?: boolean
-  isDefault?: boolean
   target?: TaskTarget
 }
 
@@ -70,12 +70,24 @@ export type MiniReminderPosition = 'bottom-right' | 'top-right' | 'bottom-left' 
 
 export interface AppSettings {
   schemaVersion: number
+  userName?: string
   theme: ThemeMode
   language: Language
   autoStartOnBoot: boolean
   startMinimizedToTray: boolean
   hasCompletedOnboarding: boolean
   soundEnabled: boolean
+  prayerLocation: PrayerLocation | null
+  prayerOptions: PrayerOptions
+  prayerAudioFile: string | null
+  fajrAudioFile: string | null
+  prayerVolume: number
+  prayerEnabled: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean>
+  prayerPreAlertMinutes: number
+  allowAdhanDuringFocus: boolean
+  allowAdhanWhileRemindersPaused: boolean
+  locationRefreshHours: 2 | 4 | 0
+  automaticLocationConsent: boolean
   pausedUntil: number | null // timestamp ms or null
   autoCheckUpdates: boolean
   updateChannel: UpdateChannel
@@ -105,6 +117,7 @@ export interface WirdStoreData {
   progress: Record<string, TaskProgress> // keyed by occurrenceId
   snoozes: Record<string, number> // keyed by occurrenceId -> snoozedUntil timestamp
   lastNotified: Record<string, number> // keyed by occurrenceId -> last notification timestamp
+  prayerEvents: Record<string, number> // keyed by location date and prayer, persisted before playback
   activeSession: FocusSession | null
 }
 
@@ -145,8 +158,8 @@ export type UpdateStatus =
   | { state: 'checking' }
   | { state: 'available'; info: UpdateInfo }
   | { state: 'not-available'; checkedAt: number }
-  | { state: 'downloading'; progress: UpdateProgress; info: UpdateInfo }
-  | { state: 'downloaded'; info: UpdateInfo }
+  | { state: 'downloading'; progress: UpdateProgress; info: UpdateInfo; fallbackFull?: boolean }
+  | { state: 'downloaded'; info: UpdateInfo; fallbackFull?: boolean }
   | { state: 'error'; message: string }
 
 export interface SystemStatus {

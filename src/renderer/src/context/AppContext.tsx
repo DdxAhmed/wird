@@ -14,10 +14,10 @@ interface AppContextType {
   loading: boolean
   systemStatus: SystemStatus | null
   updateStatus: UpdateStatus
-  activeTab: 'home' | 'history' | 'settings' | 'about'
+  activeTab: AppTab
   highlightedTaskId: string | null
   toast: { text: string; type: 'success' | 'error' | 'info' } | null
-  setActiveTab: (tab: 'home' | 'history' | 'settings' | 'about') => void
+  setActiveTab: (tab: AppTab) => void
   setHighlightedTaskId: (id: string | null) => void
   showToast: (text: string, type?: 'success' | 'error' | 'info') => void
   hideToast: () => void
@@ -56,13 +56,14 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | null>(null)
+export type AppTab = 'home' | 'prayer' | 'tasks' | 'focus' | 'history' | 'settings' | 'about'
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [storeData, setStoreData] = useState<WirdStoreData | null>(null)
   const [loading, setLoading] = useState(true)
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null)
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ state: 'idle' })
-  const [activeTab, setActiveTab] = useState<'home' | 'history' | 'settings' | 'about'>('home')
+  const [activeTab, setActiveTab] = useState<AppTab>('home')
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null)
 
@@ -114,10 +115,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const unsubTask = window.wirdApi.onTaskStatusChanged((payload: { focusTaskId?: string; tab?: string }) => {
         if (payload.focusTaskId) {
           setHighlightedTaskId(payload.focusTaskId)
-          setActiveTab('home')
+          setActiveTab('tasks')
         }
         if (payload.tab) {
-          setActiveTab(payload.tab as 'home' | 'history' | 'settings' | 'about')
+          setActiveTab(payload.tab as AppTab)
         }
       })
 
@@ -276,7 +277,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const installUpdate = async () => {
     if (!window.wirdApi) return
-    await window.wirdApi.installUpdate()
+    try { await window.wirdApi.installUpdate() }
+    catch (error) { showToast(error instanceof Error ? error.message : 'تعذر بدء التثبيت الآن', 'error') }
   }
 
   const openExternalUrl = async (url: string) => {

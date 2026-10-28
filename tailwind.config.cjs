@@ -8,6 +8,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Existing component accents use emerald utilities; map them centrally
+        // to the new violet identity while components migrate to semantic tokens.
+        emerald: {
+          50: '#f5f3ff', 100: '#ece8ff', 200: '#d9d2ff', 300: '#c7beff',
+          400: '#b8acfb', 500: '#6655b5', 600: '#5847a1', 700: '#483b87',
+          800: '#483b87', 900: '#30275d', 950: '#211b42'
+        },
+        teal: {
+          50: '#f5f3ff', 100: '#ece8ff', 200: '#d9d2ff', 300: '#c7beff',
+          400: '#b8acfb', 500: '#6655b5', 600: '#5847a1', 700: '#483b87',
+          800: '#483b87', 900: '#30275d', 950: '#211b42'
+        },
+        night: {
+          background: '#101827',
+          sidebar: '#111B2A',
+          surface: '#192537',
+          border: '#304058',
+          primary: '#A394F5',
+          selected: '#494B83',
+          gold: '#E3BD79',
+          text: '#F5F3F0',
+          muted: '#BAC2D0'
+        },
         wird: {
           50: '#f0fdf4',
           100: '#dcfce7',

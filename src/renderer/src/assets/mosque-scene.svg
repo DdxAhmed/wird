@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" fill="none">
+  <defs>
+    <!-- Sky gradient with deep indigo and violet ambient glow -->
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#363d66" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#1f2c42" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#192537" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Fade out towards the right so text on the right is completely legible -->
+    <linearGradient id="fadeToRight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#192537" stop-opacity="0"/>
+      <stop offset="55%" stop-color="#192537" stop-opacity="0.4"/>
+      <stop offset="90%" stop-color="#192537" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#192537" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- Soft crescent glow -->
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E3BD79" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#E3BD79" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background Sky -->
+  <rect width="760" height="300" fill="url(#skyGrad)"/>
+
+  <!-- Golden Moon Glow & Crescent -->
+  <circle cx="160" cy="75" r="48" fill="url(#moonGlow)"/>
+  <circle cx="160" cy="75" r="26" fill="#E3BD79" opacity="0.75"/>
+  <circle cx="172" cy="67" r="24" fill="#192537"/>
+
+  <!-- Distant Hill & Starry Night Silhouette -->
+  <path d="M0 220 Q120 170 240 210 T520 195 T760 215 V300 H0 Z" fill="#223249" opacity="0.6"/>
+
+  <!-- Architectural Background Arches -->
+  <g stroke="#3c4e6d" stroke-width="2" stroke-opacity="0.4" fill="none">
+    <path d="M40 300 V160 C40 100 120 100 120 160 V300"/>
+    <path d="M140 300 V140 C140 70 240 70 240 140 V300"/>
+    <path d="M260 300 V170 C260 115 330 115 330 170 V300"/>
+  </g>
+
+  <!-- Mosque Silhouette: Minarets, Domes, Pillars -->
+  <!-- Left Minaret -->
+  <g fill="#273852">
+    <rect x="75" y="120" width="22" height="180" rx="2"/>
+    <rect x="71" y="115" width="30" height="8" rx="2" fill="#324563"/>
+    <polygon points="75,115 86,75 97,115"/>
+    <circle cx="86" cy="70" r="3" fill="#E3BD79" opacity="0.9"/>
+
+    <!-- Central Grand Dome -->
+    <path d="M125 300 V200 C125 140 185 110 195 95 C205 110 265 140 265 200 V300 Z"/>
+    <!-- Dome Finial -->
+    <path d="M195 95 V70" stroke="#E3BD79" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="195" cy="67" r="3.5" fill="#E3BD79"/>
+
+    <!-- Side Dome -->
+    <path d="M265 300 V210 C265 160 305 140 315 125 C325 140 365 160 365 210 V300 Z" opacity="0.9"/>
+    <path d="M315 125 V105" stroke="#E3BD79" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="315" cy="102" r="2.8" fill="#E3BD79"/>
+
+    <!-- Right Minaret -->
+    <rect x="375" y="130" width="20" height="170" rx="2"/>
+    <rect x="372" y="125" width="26" height="7" rx="2" fill="#324563"/>
+    <polygon points="375,125 385,85 395,125"/>
+    <circle cx="385" cy="80" r="3" fill="#E3BD79" opacity="0.9"/>
+
+    <!-- Far Right Subtle Minaret -->
+    <rect x="445" y="165" width="16" height="135" rx="1.5" opacity="0.7"/>
+    <polygon points="445,165 453,130 461,165" opacity="0.7"/>
+  </g>
+
+  <!-- Foreground Layer: Landscape Contour & Arch Cutouts -->
+  <path d="M0 245 Q140 215 280 240 T560 230 T760 250 V300 H0 Z" fill="#1b273b"/>
+
+  <!-- Mosque Windows with Gentle Golden Amber Light -->
+  <g fill="#E3BD79" opacity="0.35">
+    <path d="M185 220 C185 210 195 210 195 210 C195 210 205 210 205 220 V240 H185 Z"/>
+    <path d="M155 228 C155 220 165 220 165 220 C165 220 175 220 175 228 V245 H155 Z"/>
+    <path d="M215 228 C215 220 225 220 225 220 C225 220 235 220 235 228 V245 H215 Z"/>
+  </g>
+
+  <!-- Smooth Blend Gradient Overlay Fading Rightwards to #192537 -->
+  <rect width="760" height="300" fill="url(#fadeToRight)"/>
+</svg>

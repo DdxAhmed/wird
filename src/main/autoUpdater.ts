@@ -9,19 +9,33 @@ export class AutoUpdateManager {
   private statusListeners: Array<(status: UpdateStatus) => void> = []
   private isChecking = false
   private periodicInterval: NodeJS.Timeout | null = null
+  private fallbackFull = false
 
-  constructor(store: StoreManager) {
+  constructor(store: StoreManager, private canInstall: () => boolean = () => true) {
     this.store = store
     this.configureUpdater()
   }
 
   private configureUpdater(): void {
     autoUpdater.autoDownload = false // Controlled download
-    autoUpdater.autoInstallOnAppQuit = true
+    // Installation must remain an explicit action; quitting during a focus session
+    // must never silently start an installer.
+    autoUpdater.autoInstallOnAppQuit = false
     autoUpdater.allowPrerelease = this.store.getData().settings.updateChannel === 'beta'
 
     // Logger
-    autoUpdater.logger = console
+    autoUpdater.logger = {
+      info: (message: string) => console.info('[Updater]', message),
+      warn: (message: string) => console.warn('[Updater]', message),
+      error: (message: string) => {
+        if (message.startsWith('Cannot download differentially, fallback to full download:')) {
+          this.fallbackFull = true
+          console.warn('[Updater] Differential download unavailable; using verified full installer')
+          if (this.status.state === 'downloading') this.setStatus({ ...this.status, fallbackFull: true })
+        } else console.error('[Updater]', message)
+      },
+      debug: (message: string) => console.debug('[Updater]', message)
+    }
 
     autoUpdater.on('checking-for-update', () => {
       this.setStatus({ state: 'checking' })
@@ -37,10 +51,8 @@ export class AutoUpdateManager {
       }
       this.setStatus({ state: 'available', info: updateInfo })
 
-      // Auto download if configured
-      if (this.store.getData().settings.autoCheckUpdates) {
-        this.downloadUpdate().catch(() => {})
-      }
+      // Checking is automatic, but downloading waits for the user's action.
+      // This also allows postponing a potentially large full-download fallback.
     })
 
     autoUpdater.on('update-not-available', () => {
@@ -61,7 +73,8 @@ export class AutoUpdateManager {
         this.setStatus({
           state: 'downloading',
           progress,
-          info
+          info,
+          fallbackFull: this.fallbackFull
         })
       }
     })
@@ -72,7 +85,7 @@ export class AutoUpdateManager {
         releaseDate: info.releaseDate,
         releaseNotes: typeof info.releaseNotes === 'string' ? info.releaseNotes : undefined
       }
-      this.setStatus({ state: 'downloaded', info: updateInfo })
+      this.setStatus({ state: 'downloaded', info: updateInfo, fallbackFull: this.fallbackFull })
     })
 
     autoUpdater.on('error', (err) => {
@@ -122,6 +135,7 @@ export class AutoUpdateManager {
 
   public async downloadUpdate(): Promise<void> {
     if (this.status.state !== 'available') return
+    this.fallbackFull = false
 
     try {
       const info = this.status.info
@@ -159,6 +173,12 @@ export class AutoUpdateManager {
 
   public async quitAndInstall(): Promise<void> {
     if (this.status.state !== 'downloaded') return
+    if (!this.canInstall()) throw new Error('أوقف الأذان قبل تثبيت التحديث')
+
+    const session = this.store.getData().activeSession
+    if (session && (session.status === 'active' || session.status === 'paused')) {
+      throw new Error('أنهِ جلسة التفرّغ أو أوقفها قبل تثبيت التحديث')
+    }
 
     // Save state before quitting
     console.log('[AutoUpdater] Restarting application to install update...')

@@ -14,6 +14,10 @@ import {
 export const wirdApi = {
   // Store & Settings
   getStoreData: (): Promise<WirdStoreData> => ipcRenderer.invoke(IPC_CHANNELS.GET_STORE_DATA),
+  getPrayerTimes: (at?: number): Promise<Record<string, number> | null> => ipcRenderer.invoke(IPC_CHANNELS.GET_PRAYER_TIMES, at),
+  pickPrayerAudio: (fajr: boolean): Promise<string | null> => ipcRenderer.invoke(IPC_CHANNELS.PICK_PRAYER_AUDIO, fajr),
+  previewPrayerAudio: (fajr: boolean): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.PREVIEW_PRAYER_AUDIO, fajr),
+  stopPrayerAudio: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.STOP_PRAYER_AUDIO),
   updateSettings: (partial: Partial<AppSettings>): Promise<WirdStoreData> =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_SETTINGS, partial),
   updateTask: (taskId: string, partial: Partial<TaskDefinition>): Promise<WirdStoreData> =>
@@ -85,6 +89,7 @@ export const wirdApi = {
   testNotification: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.TEST_NOTIFICATION),
   testMiniReminder: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.TEST_MINI_REMINDER),
   minimizeWindow: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.MINIMIZE_WINDOW),
+  toggleMaximizeWindow: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.TOGGLE_MAXIMIZE_WINDOW),
   closeWindow: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.CLOSE_WINDOW),
   quitApp: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
   openExternalUrl: (url: string): Promise<void> =>

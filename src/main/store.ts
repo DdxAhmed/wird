@@ -101,20 +101,15 @@ export class StoreManager {
     return this.data
   }
 
-  public async addTask(
-    taskData: Omit<TaskDefinition, 'id' | 'isDefault'> & { id?: string }
-  ): Promise<WirdStoreData> {
-    const id = taskData.id || `task-${Date.now()}`
-    const exists = this.data.tasks.some((t) => t.id === id)
-    const finalId = exists ? `${id}-${Date.now().toString().slice(-4)}` : id
-
+  public async addTask(taskData: Omit<TaskDefinition, 'id'> & { id?: string }): Promise<WirdStoreData> {
+    // Prevent duplicate IDs
+    const requestedId = taskData.id?.trim() || `task-${Date.now()}`
+    const exists = this.data.tasks.some((t) => t.id === requestedId)
     const task: TaskDefinition = {
       ...taskData,
-      id: finalId,
-      isCustom: true,
-      isDefault: false
+      id: exists ? `${requestedId}-${Date.now().toString().slice(-4)}` : requestedId,
+      isCustom: true
     }
-
     this.data.tasks.push(task)
     await this.persist()
     this.emitChange()
@@ -207,6 +202,17 @@ export class StoreManager {
     this.emitChange()
   }
 
+  public async recordPrayerEvent(eventId: string): Promise<void> {
+    this.data.prayerEvents[eventId] = Date.now()
+    // Bound the persistent deduplication ledger without losing recent days.
+    const cutoff = Date.now() - 45 * 24 * 60 * 60 * 1000
+    for (const [id, at] of Object.entries(this.data.prayerEvents)) {
+      if (at < cutoff) delete this.data.prayerEvents[id]
+    }
+    await this.persist()
+    this.emitChange()
+  }
+
   public async pauseReminders(durationMinutes: number): Promise<WirdStoreData> {
     const pausedUntil = Date.now() + durationMinutes * 60 * 1000
     this.data.settings.pausedUntil = pausedUntil
@@ -246,7 +252,7 @@ export class StoreManager {
   public async exportJson(): Promise<string> {
     const exportPayload = {
       exportedAt: new Date().toISOString(),
-      version: app ? app.getVersion() : '1.0.0',
+      version: app ? app.getVersion() : '1.1.0',
       data: this.data
     }
     return JSON.stringify(exportPayload, null, 2)
@@ -280,7 +286,7 @@ export class StoreManager {
       await fs.mkdir(this.backupDir, { recursive: true }).catch(() => {})
       const content = rawContent || JSON.stringify(this.data, null, 2)
       const now = new Date()
-      const dateStr = `${now.toISOString().replace(/[:.]/g, '-').slice(0, 23)}-${Math.random().toString(36).slice(2, 6)}`
+      const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, 19)
       const fileName = `wird-backup-${dateStr}.json`
       const targetPath = join(this.backupDir, fileName)
 

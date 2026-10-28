@@ -47,6 +47,7 @@ export const UpdateBanner: React.FC = () => {
           <RefreshCw className="w-4 h-4" />
           <span className="text-xs font-semibold">
             {t.settings.updateDownloaded}
+            {updateStatus.fallbackFull && ' • تعذّر التنزيل التفاضلي، واكتمل تنزيل النسخة الكاملة الموثوقة'}
           </span>
         </div>
         <button

@@ -1,9 +1,12 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage, shell } from 'electron'
+import { app, BrowserWindow, Menu, Tray, nativeImage, session, shell } from 'electron'
+import * as fs from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { APP_ID, APP_NAME, IPC_CHANNELS } from '../shared/constants'
 import { translations } from '../shared/i18n'
 import { AutoUpdateManager } from './autoUpdater'
+import { AdhanAudioManager } from './adhanAudioManager'
+import { PrayerScheduler } from './prayerScheduler'
 import { setupIpcHandlers } from './ipcHandlers'
 import { MiniReminderManager } from './miniReminderManager'
 import { NotificationManager } from './notificationManager'
@@ -12,6 +15,10 @@ import { SessionManager } from './sessionManager'
 import { StoreManager } from './store'
 
 const currentDir = typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url))
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('disable-gpu-sandbox')
+}
 
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock()
@@ -30,6 +37,8 @@ let sessionManager: SessionManager
 let miniReminderManager: MiniReminderManager
 let scheduler: SchedulerManager
 let autoUpdater: AutoUpdateManager
+let adhanAudio: AdhanAudioManager
+let prayerScheduler: PrayerScheduler
 
 function getIconPath(): string {
   return join(currentDir, '../../resources/icon.png')
@@ -55,6 +64,9 @@ function updateTrayMenu(): void {
     },
     { type: 'separator' }
   ]
+  if (adhanAudio?.isPlaying()) {
+    menuTemplate.push({ label: 'إيقاف الأذان', click: () => adhanAudio.stop().then(updateTrayMenu) }, { type: 'separator' })
+  }
 
   // Active Focus Session info if present
   if (data.activeSession && (data.activeSession.status === 'active' || data.activeSession.status === 'paused')) {
@@ -213,12 +225,12 @@ function showMainWindow(focusTaskId?: string): void {
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 980,
-    height: 720,
-    minWidth: 800,
+    width: 1536,
+    height: 1024,
+    minWidth: 760,
     minHeight: 600,
     show: false,
-    frame: true,
+    frame: false,
     title: APP_NAME,
     icon: getIconPath(),
     autoHideMenuBar: true,
@@ -290,6 +302,15 @@ app.whenReady().then(async () => {
   }
 
   await store.initialize()
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(permission === 'geolocation' &&
+      webContents === mainWindow?.webContents && store.getData().settings.automaticLocationConsent)
+  })
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) =>
+    permission === 'geolocation' &&
+    webContents === mainWindow?.webContents && store.getData().settings.automaticLocationConsent)
+  adhanAudio = new AdhanAudioManager(store, updateTrayMenu)
+  prayerScheduler = new PrayerScheduler(store, adhanAudio)
 
   sessionManager = new SessionManager(store, () => mainWindow)
 
@@ -306,14 +327,15 @@ app.whenReady().then(async () => {
     }
   )
 
-  autoUpdater = new AutoUpdateManager(store)
+  autoUpdater = new AutoUpdateManager(store, () => !adhanAudio.isPlaying())
   scheduler = new SchedulerManager(
     store,
     notifications,
     (taskId) => {
       showMainWindow(taskId)
     },
-    miniReminderManager
+    miniReminderManager,
+    () => adhanAudio.isPlaying()
   )
 
   setupIpcHandlers(
@@ -323,6 +345,7 @@ app.whenReady().then(async () => {
     autoUpdater,
     sessionManager,
     miniReminderManager,
+    adhanAudio,
     () => mainWindow
   )
 
@@ -330,6 +353,7 @@ app.whenReady().then(async () => {
   createTray()
 
   scheduler.start()
+  prayerScheduler.start()
   autoUpdater.startPeriodicCheck()
 
   // Sync store changes to renderer & update tray
@@ -365,6 +389,8 @@ app.on('before-quit', () => {
   if (scheduler) {
     scheduler.stop()
   }
+  prayerScheduler?.stop()
+  adhanAudio?.close()
   if (autoUpdater) {
     autoUpdater.stopPeriodicCheck()
   }

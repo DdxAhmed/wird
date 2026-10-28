@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
+import { calculatePrayerTimes, validatePrayerLocation } from '../shared/prayer'
 import { AppSettings, TaskDefinition } from '../shared/types'
 import { AutoLauncher } from './autoLauncher'
+import { AdhanAudioManager } from './adhanAudioManager'
 import { AutoUpdateManager } from './autoUpdater'
 import { MiniReminderManager } from './miniReminderManager'
 import { NotificationManager } from './notificationManager'
@@ -16,6 +18,7 @@ export function setupIpcHandlers(
   updater: AutoUpdateManager,
   sessionManager: SessionManager,
   miniReminderManager: MiniReminderManager,
+  adhanAudio: AdhanAudioManager,
   getMainWindow: () => BrowserWindow | null
 ): void {
   // Store & Settings
@@ -23,10 +26,28 @@ export function setupIpcHandlers(
     return store.getData()
   })
 
+  ipcMain.handle(IPC_CHANNELS.GET_PRAYER_TIMES, async (_event, at?: number) => {
+    const { prayerLocation, prayerOptions } = store.getData().settings
+    if (at !== undefined && (!Number.isFinite(at) || Math.abs(at - Date.now()) > 48 * 60 * 60 * 1000)) {
+      throw new Error('وقت الحساب غير صالح')
+    }
+    return prayerLocation ? calculatePrayerTimes(prayerLocation, prayerOptions, at === undefined ? new Date() : new Date(at)) : null
+  })
+  ipcMain.handle(IPC_CHANNELS.PICK_PRAYER_AUDIO, async (_event, fajr: boolean) => adhanAudio.pick(Boolean(fajr)))
+  ipcMain.handle(IPC_CHANNELS.PREVIEW_PRAYER_AUDIO, async (_event, fajr: boolean) => {
+    const settings = store.getData().settings
+    const file = fajr && settings.fajrAudioFile || settings.prayerAudioFile
+    if (!file) throw new Error('اختر ملف أذان أولًا')
+    await adhanAudio.play(file, settings.prayerVolume)
+    return true
+  })
+  ipcMain.handle(IPC_CHANNELS.STOP_PRAYER_AUDIO, async () => { await adhanAudio.stop(); return true })
+
   ipcMain.handle(IPC_CHANNELS.UPDATE_SETTINGS, async (_event, partialSettings: Partial<AppSettings>) => {
     if (!partialSettings || typeof partialSettings !== 'object') {
       throw new Error('Invalid settings object')
     }
+    if (partialSettings.prayerLocation) validatePrayerLocation(partialSettings.prayerLocation)
     const updated = await store.updateSettings(partialSettings)
     if (partialSettings.autoStartOnBoot !== undefined) {
       AutoLauncher.setEnabled(partialSettings.autoStartOnBoot)
@@ -168,7 +189,7 @@ export function setupIpcHandlers(
   ipcMain.handle(IPC_CHANNELS.GET_SYSTEM_STATUS, async () => {
     return {
       isAutoStartEnabled: AutoLauncher.isEnabled(),
-      appVersion: process.env.npm_package_version || '1.0.0',
+      appVersion: process.env.npm_package_version || '1.1.0',
       platform: process.platform,
       isPackaged: !process.defaultApp
     }
@@ -201,6 +222,13 @@ export function setupIpcHandlers(
   ipcMain.handle(IPC_CHANNELS.MINIMIZE_WINDOW, () => {
     const win = getMainWindow()
     if (win) win.minimize()
+  })
+  ipcMain.handle(IPC_CHANNELS.TOGGLE_MAXIMIZE_WINDOW, () => {
+    const win = getMainWindow()
+    if (!win) return false
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+    return win.isMaximized()
   })
 
   ipcMain.handle(IPC_CHANNELS.CLOSE_WINDOW, () => {

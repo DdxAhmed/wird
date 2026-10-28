@@ -64,6 +64,17 @@ describe('Scheduler & Task Occurrence Logic', () => {
       startMinimizedToTray: true,
       hasCompletedOnboarding: true,
       soundEnabled: true,
+      prayerLocation: null,
+      prayerOptions: { method: 'Egypt', asr: 'Standard', highLats: 'AngleBased', offsets: {} },
+      prayerAudioFile: null,
+      fajrAudioFile: null,
+      prayerVolume: 0.8,
+      prayerEnabled: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
+      prayerPreAlertMinutes: 0,
+      allowAdhanDuringFocus: true,
+      allowAdhanWhileRemindersPaused: true,
+      locationRefreshHours: 4,
+      automaticLocationConsent: false,
       pausedUntil: null,
       autoCheckUpdates: true,
       updateChannel: 'stable',
@@ -80,6 +91,7 @@ describe('Scheduler & Task Occurrence Logic', () => {
     progress: {},
     snoozes: {},
     lastNotified: {},
+    prayerEvents: {},
     activeSession: null
   })
 

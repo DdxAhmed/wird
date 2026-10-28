@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { translations } from '@shared/i18n'
 import { Language, TaskDefinition, ThemeMode } from '@shared/types'
 import { useApp } from '../context/AppContext'
+import { PrayerPanel } from './PrayerPanel'
 import {
   Bell,
   Check,
@@ -123,6 +124,7 @@ export const OnboardingModal: React.FC = () => {
 
           {step === 2 && (
             <div className="space-y-4 animate-fade-in">
+              <PrayerPanel />
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   {t.onboarding.step2Title}

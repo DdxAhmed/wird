@@ -12,17 +12,20 @@ export class SchedulerManager {
   private timer: NodeJS.Timeout | null = null
   private onOpenAppCallback?: (taskId?: string) => void
   private lastEvaluationTime: number = Date.now()
+  private isAdhanPlaying: () => boolean
 
   constructor(
     store: StoreManager,
     notifications: NotificationManager,
     onOpenApp: (taskId?: string) => void,
-    miniReminderManager?: MiniReminderManager
+    miniReminderManager?: MiniReminderManager,
+    isAdhanPlaying: () => boolean = () => false
   ) {
     this.store = store
     this.notifications = notifications
     this.onOpenAppCallback = onOpenApp
     this.miniReminderManager = miniReminderManager
+    this.isAdhanPlaying = isAdhanPlaying
 
     this.registerPowerMonitor()
   }
@@ -73,6 +76,7 @@ export class SchedulerManager {
    */
   public async evaluateSchedule(isWakeup = false): Promise<TaskOccurrenceInfo[]> {
     const data = this.store.getData()
+    if (this.isAdhanPlaying()) return this.getAllTaskOccurrences()
 
     // Central coordination: If in active or paused focus session, suppress reminders
     if (data.activeSession && (data.activeSession.status === 'active' || data.activeSession.status === 'paused')) {

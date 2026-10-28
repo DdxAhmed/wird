@@ -29,3 +29,4 @@ Thumbs.db
 wird-store*.json
 tests/.temp-*
 *.tsbuildinfo
+.qa-*/

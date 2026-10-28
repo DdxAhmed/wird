@@ -21,16 +21,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -63,6 +63,16 @@ jobs:
           CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         run: pnpm run dist
+
+      - name: Verify update artifacts
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem dist -Filter 'Wird-Setup-*.exe' | Select-Object -First 1
+          if (-not $installer) { throw 'NSIS installer is missing' }
+          if (-not (Test-Path 'dist/latest.yml')) { throw 'latest.yml is missing' }
+          if (-not (Test-Path "dist/$($installer.Name).blockmap")) { throw 'NSIS blockmap is missing' }
+          Write-Host "Installer: $($installer.Length) bytes"
+          Write-Host "Blockmap: $((Get-Item "dist/$($installer.Name).blockmap").Length) bytes"
 
       - name: Determine Prerelease status
         id: prerelease_check

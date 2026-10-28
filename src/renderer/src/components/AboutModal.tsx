@@ -38,7 +38,7 @@ export const AboutModal: React.FC = () => {
             </h2>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono font-medium border border-emerald-200/50 dark:border-emerald-800/50">
-                {t.about.version} {systemStatus?.appVersion || '1.0.0'}
+                {t.about.version} {systemStatus?.appVersion || '1.1.0'}
               </span>
             </div>
           </div>

@@ -9,6 +9,7 @@ import {
 } from '@shared/types'
 import { useApp } from '../context/AppContext'
 import { CustomTaskModal } from './CustomTaskModal'
+import { PrayerPanel } from './PrayerPanel'
 import {
   AlertTriangle,
   Bell,
@@ -159,6 +160,7 @@ export const SettingsView: React.FC = () => {
       {/* SECTION: GENERAL */}
       {activeSection === 'general' && (
         <div className="space-y-4">
+          <PrayerPanel />
           {/* Language & Theme Card */}
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -216,6 +218,19 @@ export const SettingsView: React.FC = () => {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* User Greeting Name */}
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+              <label className="text-xs text-slate-400 block mb-1.5 font-medium">اسم المستخدم للترحيب (اختياري)</label>
+              <input
+                type="text"
+                value={storeData.settings.userName || ''}
+                placeholder="مثال: أحمد"
+                onChange={(e) => updateSettings({ userName: e.target.value })}
+                className="w-full max-w-sm px-3.5 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-violet-400"
+              />
+              <span className="text-[11px] text-slate-400 block mt-1">يظهر أعلى الصفحة الرئيسية («السلام عليكم يا أحمد»)</span>
             </div>
           </div>
 
@@ -397,7 +412,7 @@ export const SettingsView: React.FC = () => {
                     <span className="text-sm font-bold text-slate-900 dark:text-white">
                       {task.name[lang] || task.name.ar}
                     </span>
-                    {!task.isDefault && (
+                    {task.isCustom && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-medium">
                         مهمة مخصصة
                       </span>
@@ -578,7 +593,7 @@ export const SettingsView: React.FC = () => {
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 <span className="text-slate-400">الإصدار المثبت: </span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                  v{systemStatus?.appVersion || '1.0.0'}
+                  v{systemStatus?.appVersion || '1.1.0'}
                 </span>
               </div>
             </div>
