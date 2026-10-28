@@ -1,0 +1,31 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Node modules
+node_modules
+dist
+out
+dist-electron
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local storage & test data
+wird-store*.json
+tests/.temp-*
+*.tsbuildinfo

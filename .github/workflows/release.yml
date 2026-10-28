@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    name: Build & Publish Windows Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download & verify Electron binary
+        run: node ./node_modules/electron/install.js
+
+      - name: Verify Tag matches package.json version
+        shell: pwsh
+        run: |
+          $pkg = Get-Content package.json | ConvertFrom-Json
+          $tagVersion = "${{ github.ref_name }}".TrimStart('v')
+          Write-Host "Tag version: $tagVersion"
+          Write-Host "Package version: $($pkg.version)"
+          if ($tagVersion -ne $pkg.version) {
+            Write-Error "Mismatch between Git tag ($tagVersion) and package.json version ($($pkg.version))!"
+            exit 1
+          }
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Run Unit Tests
+        run: pnpm test
+
+      - name: Build and Package Windows NSIS Installer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Windows Authenticode signing secrets (optional, used if provided in repository settings)
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: pnpm run dist
+
+      - name: Determine Prerelease status
+        id: prerelease_check
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $isPre = $tag -match "(-alpha|-beta|-rc)"
+          Write-Host "Is prerelease: $isPre"
+          "is_prerelease=$isPre" >> $env:GITHUB_OUTPUT
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: ${{ steps.prerelease_check.outputs.is_prerelease == 'True' }}
+          generate_release_notes: true
+          files: |
+            dist/Wird-Setup-*.exe
+            dist/latest.yml
+            dist/*.blockmap
